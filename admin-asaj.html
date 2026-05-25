@@ -16,7 +16,6 @@
         .nav-tabs .nav-link { color: #aaa; border: none; }
         .nav-tabs .nav-link.active { background-color: #1e1e1e; color: #0d6efd; border: 1px solid #2d2d2d; border-bottom: none; }
         .nav-tabs { border-bottom: 1px solid #2d2d2d; }
-        .preview-box { max-height: 300px; overflow-y: auto; background-color: #1a1a1a; padding: 10px; border-radius: 5px; border: 1px dashed #444; }
     </style>
 </head>
 <body>
@@ -32,7 +31,7 @@
 </nav>
 
 <div class="container-fluid px-4">
-    <ul class="nav nav-tabs mb-4" id="adminTab" roletablist">
+    <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
         <li class="nav-item">
             <button class="nav-link active fw-bold" id="peserta-tab" data-bs-toggle="tab" data-bs-target="#peserta-panel" type="button"><i class="fa-solid fa-users"></i> 👨‍🎓 Modul Peserta</button>
         </li>
@@ -142,7 +141,7 @@
                                 <div class="mb-1">
                                     <label class="form-label small">Pilihan B</label>
                                     <input type="text" id="soalOpsiB" class="form-control form-control-sm">
-                                end
+                                </div>
                                 <div class="mb-1">
                                     <label class="form-label small">Pilihan C</label>
                                     <input type="text" id="soalOpsiC" class="form-control form-control-sm">
@@ -188,8 +187,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+            </div> </div>
 
         <div class="tab-pane fade" id="nilai-panel">
             <div class="card p-4 mb-4">
@@ -228,19 +226,19 @@
     let dataSiswaMassalTerbaca = [];
     let dataSoalMassalTerbaca = [];
     
-    // Mengambil Sesi Identitas Admin Kelas Aktif
-    const idKelasAktif = localStorage.getItem('admin_id_kelas') || "KLS-06"; 
-    const namaGuruAktif = localStorage.getItem('admin_nama_guru') || "Guru Admin";
+    // Sinkronisasi Sesi Identitas Admin Kelas Aktif (Global Bind)
+    const idKelasGlobal = localStorage.getItem('admin_id_kelas') || "KLS-06"; 
+    const namaGuruGlobal = localStorage.getItem('admin_nama_guru') || "Guru Admin";
 
     window.onload = function() {
-        document.getElementById('infoAdminAktif').innerText = `Kelas: ${idKelasAktif} | Guru: ${namaGuruAktif}`;
+        document.getElementById('infoAdminAktif').innerText = `Kelas: ${idKelasGlobal} | Guru: ${namaGuruGlobal}`;
         muatDataSiswaEksisting();
     };
 
     function logoutAdmin() {
         if(confirm("Apakah Anda ingin keluar dari panel administrasi ini?")) {
             localStorage.clear();
-            window.location.href = "login.html"; // Ubah sesuai halaman landing login Anda
+            window.location.reload(); 
         }
     }
 
@@ -292,7 +290,7 @@
 
     function kirimPesertaMassal() {
         if(dataSiswaMassalTerbaca.length === 0) return;
-        if(!confirm(`Simpan ${dataSiswaMassalTerbaca.length} peserta baru ke kelas ${idKelasAktif}? Data lama kelas ini akan digantikan.`)) return;
+        if(!confirm(`Simpan ${dataSiswaMassalTerbaca.length} peserta baru ke kelas ${idKelasGlobal}? Data lama kelas ini akan digantikan.`)) return;
         
         document.getElementById('btnSimpanPeserta').innerText = "Sedang Menyimpan...";
         document.getElementById('btnSimpanPeserta').disabled = true;
@@ -301,7 +299,7 @@
             method: 'POST',
             body: JSON.stringify({
                 action: 'simpanSiswaMassal',
-                id_kelas: idKelasAktif,
+                id_kelas: idKelasGlobal,
                 data_siswa: dataSiswaMassalTerbaca
             })
         })
@@ -318,7 +316,7 @@
     }
 
     function muatDataSiswaEksisting() {
-        fetch(`${URL_WEB_APP}?action=ambilDataSiswa&id_kelas=${idKelasAktif}`)
+        fetch(`${URL_WEB_APP}?action=ambilDataSiswa&id_kelas=${idKelasGlobal}`)
         .then(r => r.json())
         .then(res => {
             if(res.status === 'success' && res.data.length > 0) {
@@ -357,7 +355,7 @@
         e.preventDefault();
         const payload = {
             mata_pelajaran: document.getElementById('soalMapel').value,
-            id_kelas: idKelasAktif,
+            id_kelas: idKelasGlobal,
             jenis_soal: document.getElementById('soalJenis').value,
             pertanyaan: document.getElementById('soalPertanyaan').value,
             pilihan_a: document.getElementById('soalOpsiA').value,
@@ -406,12 +404,12 @@
                 tbody.innerHTML = "";
                 
                 sheetJson.forEach(soal => {
-                    let opsiHtml = soal.jenis_soal === 'PILIHAN GANDA' ? 
+                    let opsiHtml = (soal.jenis_soal === 'PILIHAN GANDA' || soal.jenis_soal === 'pilihan ganda') ? 
                         `<div class="small text-muted">A: ${soal.pilihan_a || '-'} | B: ${soal.pilihan_b || '-'} | C: ${soal.pilihan_c || '-'} | D: ${soal.pilihan_d || '-'}</div>` : '';
                     
                     tbody.innerHTML += `
                         <tr class="table-warning text-dark">
-                            <td><small><i>AUTO</i></small></td>
+                            <td><small><i>PREVIEW</i></small></td>
                             <td>${(soal.mata_pelajaran || 'UMUM').toUpperCase()}</td>
                             <td><span class="badge bg-secondary">${soal.jenis_soal}</span></td>
                             <td>
@@ -424,7 +422,7 @@
                     `;
                 });
                 document.getElementById('btnSimpanSoalMassal').disabled = false;
-                alert(`Berhasil membaca ${sheetJson.length} butir soal dari Excel. Periksa pratinjau tabel lalu klik 'Simpan Soal Massal'!`);
+                alert(`Berhasil membaca ${sheetJson.length} butir soal. Silakan klik 'Simpan Soal Massal' untuk mengirim.`);
             } catch(err) {
                 alert("Gagal memproses file Excel: " + err.toString());
             }
@@ -434,7 +432,7 @@
 
     function kirimSoalMassal() {
         if(dataSoalMassalTerbaca.length === 0) return;
-        if(!confirm(`Unggah ${dataSoalMassalTerbaca.length} butir soal ke database kelas ${idKelasAktif}? Soal lama kelas ini otomatis dibersihkan.`)) return;
+        if(!confirm(`Unggah ${dataSoalMassalTerbaca.length} butir soal ke database kelas ${idKelasGlobal}? Soal lama kelas ini otomatis dibersihkan.`)) return;
 
         document.getElementById('btnSimpanSoalMassal').innerText = "Sedang Mengirim...";
         document.getElementById('btnSimpanSoalMassal').disabled = true;
@@ -443,7 +441,7 @@
             method: 'POST',
             body: JSON.stringify({
                 action: 'simpanSoalMassal',
-                id_kelas: idKelasAktif,
+                id_kelas: idKelasGlobal,
                 data_soal: dataSoalMassalTerbaca
             })
         })
@@ -463,7 +461,7 @@
         const tbody = document.getElementById('tabelSoalBody');
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Memuat data bank soal dari cloud database...</td></tr>`;
         
-        fetch(`${URL_WEB_APP}?action=ambilBankSoal&id_kelas=${idKelasAktif}`)
+        fetch(`${URL_WEB_APP}?action=ambilBankSoal&id_kelas=${idKelasGlobal}`)
         .then(r => r.json())
         .then(res => {
             if(res.status === 'success' && res.data.length > 0) {
@@ -499,7 +497,7 @@
         const tbody = document.getElementById('tabelNilaiBody');
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Memuat data rekap nilai...</td></tr>`;
 
-        fetch(`${URL_WEB_APP}?action=ambilRekapNilai&id_kelas=${idKelasAktif}`)
+        fetch(`${URL_WEB_APP}?action=ambilRekapNilai&id_kelas=${idKelasGlobal}`)
         .then(r => r.json())
         .then(res => {
             if(res.status === 'success' && res.data.length > 0) {
