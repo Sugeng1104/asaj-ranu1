@@ -187,7 +187,8 @@
                         </div>
                     </div>
                 </div>
-            </div> </div>
+            </div> 
+        </div>
 
         <div class="tab-pane fade" id="nilai-panel">
             <div class="card p-4 mb-4">
@@ -226,11 +227,19 @@
     let dataSiswaMassalTerbaca = [];
     let dataSoalMassalTerbaca = [];
     
-    // Sinkronisasi Sesi Identitas Admin Kelas Aktif (Global Bind)
-    const idKelasGlobal = localStorage.getItem('admin_id_kelas') || "KLS-06"; 
-    const namaGuruGlobal = localStorage.getItem('admin_nama_guru') || "Guru Admin";
+    // Penarikan Sesi Tanpa Data Hardcode Palsu untuk mencegah kesalahan data kamar kelas
+    const idKelasGlobal = localStorage.getItem('admin_id_kelas'); 
+    const namaGuruGlobal = localStorage.getItem('admin_nama_guru');
 
     window.onload = function() {
+        // Proteksi Sistem: Jika admin melompat ke halaman ini tanpa melakukan login yang valid
+        if (!idKelasGlobal || !namaGuruGlobal) {
+            alert("Akses ditolak! Sesi administrasi tidak valid atau telah berakhir. Anda akan diarahkan ke halaman utama.");
+            window.location.href = "https://sugeng1104.github.io/asaj-ranu1/index.html";
+            return;
+        }
+
+        // Tampilkan Identitas Akurat Berdasarkan Hasil Login di Sheet Data_Kelas (Contoh: KLS-04)
         document.getElementById('infoAdminAktif').innerText = `Kelas: ${idKelasGlobal} | Guru: ${namaGuruGlobal}`;
         muatDataSiswaEksisting();
     };
@@ -238,7 +247,7 @@
     function logoutAdmin() {
         if(confirm("Apakah Anda ingin keluar dari panel administrasi ini?")) {
             localStorage.clear();
-            window.location.reload(); 
+            window.location.href = "https://sugeng1104.github.io/asaj-ranu1/index.html"; 
         }
     }
 
