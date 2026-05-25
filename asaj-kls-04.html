@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .emas-menyala {
@@ -87,29 +87,36 @@
                         <span class="text-sm font-bold text-slate-400">Soal Nomor: <span id="current-number-label" class="text-slate-700 font-black text-base">1</span></span>
                     </div>
 
-                    <div id="wadah-gambar-soal" class="hidden mb-6 justify-center">
-                        <img id="img-soal" src="" alt="Gambar Pendukung Soal" class="max-h-[220px] rounded-2xl border border-slate-200 object-contain shadow-sm">
+                    <div id="wadah-gambar-soal" class="hidden mb-6 justify-center bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        <img id="img-soal" src="" alt="Gambar Pendukung Soal" class="max-h-[250px] rounded-xl border border-slate-200 object-contain shadow-sm">
                     </div>
 
                     <p id="teks-pertanyaan" class="text-base sm:text-lg font-bold text-slate-800 leading-relaxed mb-6">Pertanyaan Soal</p>
 
-                    <div class="space-y-3" id="wrapper-opsi">
-                        <button onclick="pilihJawabanSiswa('A')" id="opsi-A" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
-                            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">A</span>
-                            <span id="text-opsi-A" class="text-slate-700 text-sm sm:text-base">Pilihan A</span>
-                        </button>
-                        <button onclick="pilihJawabanSiswa('B')" id="opsi-B" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
-                            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">B</span>
-                            <span id="text-opsi-B" class="text-slate-700 text-sm sm:text-base">Pilihan B</span>
-                        </button>
-                        <button onclick="pilihJawabanSiswa('C')" id="opsi-C" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
-                            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">C</span>
-                            <span id="text-opsi-C" class="text-slate-700 text-sm sm:text-base">Pilihan C</span>
-                        </button>
-                        <button onclick="pilihJawabanSiswa('D')" id="opsi-D" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
-                            <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">D</span>
-                            <span id="text-opsi-D" class="text-slate-700 text-sm sm:text-base">Pilihan D</span>
-                        </button>
+                    <div id="container-jawaban">
+                        <div class="space-y-3 hidden" id="wrapper-opsi-pg">
+                            <button onclick="pilihJawabanSiswa('A')" id="opsi-A" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
+                                <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">A</span>
+                                <span id="text-opsi-A" class="text-slate-700 text-sm sm:text-base">Pilihan A</span>
+                            </button>
+                            <button onclick="pilihJawabanSiswa('B')" id="opsi-B" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
+                                <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">B</span>
+                                <span id="text-opsi-B" class="text-slate-700 text-sm sm:text-base">Pilihan B</span>
+                            </button>
+                            <button onclick="pilihJawabanSiswa('C')" id="opsi-C" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
+                                <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">C</span>
+                                <span id="text-opsi-C" class="text-slate-700 text-sm sm:text-base">Pilihan C</span>
+                            </button>
+                            <button onclick="pilihJawabanSiswa('D')" id="opsi-D" class="w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-300 rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer">
+                                <span class="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center font-bold shrink-0 text-sm">D</span>
+                                <span id="text-opsi-D" class="text-slate-700 text-sm sm:text-base">Pilihan D</span>
+                            </button>
+                        </div>
+
+                        <div class="hidden space-y-2 bg-slate-50 p-5 rounded-2xl border border-slate-200" id="wrapper-opsi-isian">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ketikkan Jawaban Singkat Ananda di Sini:</label>
+                            <input type="text" id="input-isian-siswa" oninput="simpanJawabanIsian(this.value)" autocomplete="off" class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-lg text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase" placeholder="Tulis jawaban di sini...">
+                        </div>
                     </div>
                 </div>
 
@@ -150,10 +157,12 @@
     </div>
 
     <script>
+        // Masukkan URL Web App Google Apps Script Anda yang sudah dideploy terbaru
         const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
         
-        const GITHUB_USERNAME = 'Suger-coding'; 
-        const GITHUB_REPO = 'asaj-ranuklindungan';    
+        // KRUSIAL: Menyelaraskan nama dengan Apps Script Anda agar gambar tidak broken
+        const GITHUB_USERNAME = 'sugeng1104'; 
+        const GITHUB_REPO = 'asaj-ranu1';    
 
         let dataSoalUjian = [];
         let indexSoalAktif = 0;
@@ -231,16 +240,17 @@
         }
 
         function muatMasterSoal() {
+            // Memanggil action 'ambilMasterSoal' (sudah didukung ganda di backend Apps Script teranyar)
             fetch(`${API_URL}?action=ambilMasterSoal&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
-                    // FILTER DAN NORMALISASI KUNCI VARIABEL DATA AGAR ANTI-EROR
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
                         
                         dataSoalUjian = respon.data.map(item => {
                             return {
-                                nomor_soal: item.nomor_soal || item.NOMOR_SOAL || item.id_soal || item.ID_SOAL,
+                                nomor_soal: item.nomor_soal || item.NOMOR_SOAL || 1,
                                 mata_pelajaran: item.mata_pelajaran || item.MATA_PELAJARAN || "UMUM",
+                                jenis_soal: (item.jenis_soal || item.JENIS_SOAL || "PILIHAN GANDA").toString().toUpperCase().trim(),
                                 pertanyaan: item.pertanyaan || item.PERTANYAAN || "",
                                 pilihan_a: item.pilihan_a || item.PILIHAN_A || "",
                                 pilihan_b: item.pilihan_b || item.PILIHAN_B || "",
@@ -252,7 +262,7 @@
                             };
                         });
 
-                        // Urutkan berdasar nomor_soal secara ascending (dari kecil ke besar)
+                        // Urutkan soal berdasarkan angka nomor_soal
                         dataSoalUjian.sort((a, b) => parseInt(a.nomor_soal) - parseInt(b.nomor_soal));
 
                         document.getElementById("loading-soal").classList.add("hidden");
@@ -268,7 +278,6 @@
                     console.error(err);
                     document.getElementById("loading-soal").innerHTML = `
                         <div class="text-red-500 font-bold">Gagal memuat butir soal. Hubungi Proktor.</div>
-                        <p class="text-xs text-slate-400 mt-2">Pastikan set parameter Web App Apps Script mengembalikan properti data dari sheet Master_Soal.</p>
                     `;
                 });
         }
@@ -281,7 +290,6 @@
                 const btnNo = document.createElement("button");
                 btnNo.type = "button";
                 btnNo.id = `btn-no-${idx}`;
-                // Menampilkan nomor berdasarkan isi kolom nomor_soal spreadsheet Anda
                 btnNo.innerText = soal.nomor_soal;
                 
                 btnNo.className = "py-3 text-sm font-bold rounded-xl border text-center transition-all cursor-pointer";
@@ -296,9 +304,11 @@
             const el = elemen || document.getElementById(`btn-no-${idx}`);
             if (!el) return;
 
+            const adaJawaban = mapJawabanSiswa[idx] && mapJawabanSiswa[idx].toString().trim() !== "";
+
             if (idx === indexSoalAktif) {
                 el.className = "py-3 text-sm font-black rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-600 text-center cursor-pointer shadow-inner";
-            } else if (mapJawabanSiswa[idx]) {
+            } else if (adaJawaban) {
                 el.className = "py-3 text-sm font-bold rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-600 text-center cursor-pointer";
             } else {
                 el.className = "py-3 text-sm font-medium rounded-xl border border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 text-center cursor-pointer";
@@ -317,12 +327,7 @@
             document.getElementById("label-mapel").innerText = itemSoal.mata_pelajaran;
             document.getElementById("teks-pertanyaan").innerText = itemSoal.pertanyaan;
 
-            document.getElementById("text-opsi-A").innerText = itemSoal.pilihan_a;
-            document.getElementById("text-opsi-B").innerText = itemSoal.pilihan_b;
-            document.getElementById("text-opsi-C").innerText = itemSoal.pilihan_c;
-            document.getElementById("text-opsi-D").innerText = itemSoal.pilihan_d;
-
-            // RENDERING GAMBAR DI ATAS SOAL
+            // RENDERING GAMBAR DARI REPO GITHUB DAN FOLDER TARGET YANG BENAR (img/kls-04/)
             const wadahImg = document.getElementById("wadah-gambar-soal");
             const imgEl = document.getElementById("img-soal");
             
@@ -335,15 +340,36 @@
                 imgEl.src = "";
             }
 
-            const jawabanTerpilih = mapJawabanSiswa[idx];
-            ['A', 'B', 'C', 'D'].forEach(opsi => {
-                const btnOpsi = document.getElementById(`opsi-${opsi}`);
-                if (opsi === jawabanTerpilih) {
-                    btnOpsi.className = "w-full text-left px-5 py-4 border-2 border-blue-500 bg-blue-50/50 rounded-2xl font-bold transition-all flex items-center gap-4 cursor-pointer";
-                } else {
-                    btnOpsi.className = "w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-200 bg-white rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer";
-                }
-            });
+            // KONDISIONAL BERDASARKAN JENIS SOAL (PILGAN vs ISIAN SINGKAT)
+            const areaPg = document.getElementById("wrapper-opsi-pg");
+            const areaIsian = document.getElementById("wrapper-opsi-isian");
+            const inputIsian = document.getElementById("input-isian-siswa");
+
+            if (itemSoal.jenis_soal === "ISIAN SINGKAT" || itemSoal.jenis_soal === "ISIAN") {
+                areaPg.classList.add("hidden");
+                areaIsian.classList.remove("hidden");
+                // Tampilkan kembali jawaban isian yang sempat ditulis sebelumnya jika ada
+                inputIsian.value = mapJawabanSiswa[idx] || "";
+            } else {
+                // Default ke PILIHAN GANDA
+                areaIsian.classList.add("hidden");
+                areaPg.classList.remove("hidden");
+
+                document.getElementById("text-opsi-A").innerText = itemSoal.pilihan_a;
+                document.getElementById("text-opsi-B").innerText = itemSoal.pilihan_b;
+                document.getElementById("text-opsi-C").innerText = itemSoal.pilihan_c;
+                document.getElementById("text-opsi-D").innerText = itemSoal.pilihan_d;
+
+                const jawabanTerpilih = mapJawabanSiswa[idx];
+                ['A', 'B', 'C', 'D'].forEach(opsi => {
+                    const btnOpsi = document.getElementById(`opsi-${opsi}`);
+                    if (opsi === jawabanTerpilih) {
+                        btnOpsi.className = "w-full text-left px-5 py-4 border-2 border-blue-500 bg-blue-50/50 rounded-2xl font-bold transition-all flex items-center gap-4 cursor-pointer";
+                    } else {
+                        btnOpsi.className = "w-full text-left px-5 py-4 border-2 border-slate-100 hover:border-slate-200 bg-white rounded-2xl font-medium transition-all flex items-center gap-4 cursor-pointer";
+                    }
+                });
+            }
 
             document.getElementById("btn-kembali").disabled = (idx === 0);
             document.getElementById("btn-lanjut").innerText = (idx === dataSoalUjian.length - 1) ? "SELESAI" : "LANJUT";
@@ -352,6 +378,10 @@
         function pilihJawabanSiswa(opsiPilihan) {
             mapJawabanSiswa[indexSoalAktif] = opsiPilihan;
             tampilkanSoalSpesifik(indexSoalAktif); 
+        }
+
+        function simpanJawabanIsian(nilaiTeks) {
+            mapJawabanSiswa[indexSoalAktif] = nilaiTeks;
         }
 
         function soalSebelumnya() {
@@ -372,11 +402,11 @@
                 
                 let totalSkorSiswa = 0;
                 dataSoalUjian.forEach((soal, idx) => {
-                    const jawabanSiswa = mapJawabanSiswa[idx];
+                    const jawabanSiswa = (mapJawabanSiswa[idx] || '').toString().trim().toUpperCase();
                     const kunciBenar = (soal.kunci_jawaban || '').toString().trim().toUpperCase();
                     const bobot = parseFloat(soal.bobot_nilai || 0);
 
-                    if (jawabanSiswa && jawabanSiswa === kunciBenar) {
+                    if (jawabanSiswa === kunciBenar && kunciBenar !== "") {
                         totalSkorSiswa += bobot;
                     }
                 });
