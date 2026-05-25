@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ASAJ - SDN Ranuklindungan I</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+    }
+    .font-kids-title {
+      font-family: 'Fredoka One', cursive;
+    }
+    /* Efek Animasi Tombol Timbul (3D Pop-Up Effect) */
+    .btn-3d {
+      transition: all 0.1s ease;
+    }
+    .btn-3d:active {
+      transform: translateY(6px) !important;
+      box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between items-center p-6 text-slate-800">
+
+  <main class="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8 my-auto text-center border-4 border-indigo-100 relative">
+    
+    <header class="flex flex-col items-center mb-6">
+      <img src="https://placehold.co/120x120/3b82f6/ffffff?text=Logo+SD" alt="Logo SD" class="w-24 h-24 object-contain mb-4 drop-shadow-md animate-bounce" style="animation-duration: 3s;">
+      <h1 class="text-2xl md:text-4xl font-kids-title text-indigo-600 tracking-wide leading-tight">
+        Selamat Datang di Aplikasi ASAJ
+      </h1>
+      <p class="text-lg md:text-xl font-bold text-slate-500 mt-1">
+        Asesmen Sumatif Akhir Jenjang SDN Ranuklindungan I
+      </p>
+    </header>
+
+    <section class="mb-8 px-5 py-4 bg-indigo-50/70 rounded-2xl border border-indigo-100">
+      <p class="text-sm md:text-base text-slate-600 leading-relaxed font-medium">
+        <strong>Asesmen Sumatif Akhir Jenjang (ASAJ)</strong> adalah ruang bagi kalian untuk menunjukkan hasil belajar, kompetensi, dan kreativitas yang telah dipelajari. Jalani dengan jujur, teliti, dan penuh percaya diri. Semangat, kalian pasti bisa memberikan yang terbaik!
+      </p>
+    </section>
+
+    <section class="mb-10">
+      <h3 class="text-sm font-bold text-slate-400 mb-6 uppercase tracking-wider">Pilih Kelas untuk Memulai Ujian:</h3>
+      
+      <div id="loader" class="flex flex-col items-center justify-center space-y-2 py-4">
+        <div class="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-xs font-semibold text-slate-400">Memuat data kelas dari server...</p>
+      </div>
+
+      <div id="container-tombol-kelas" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 pt-2 pb-4 hidden">
+        </div>
+    </section>
+
+    <footer class="flex flex-col items-center justify-center">
+      <button onclick="bukaPetunjuk()" class="w-14 h-14 bg-amber-400 hover:bg-amber-500 text-white rounded-full flex items-center justify-center shadow-lg transition-transform transform hover:rotate-12 active:scale-90 border-4 border-white ring-4 ring-amber-200 text-2xl font-black">
+        ?
+      </button>
+      <span class="text-xs font-bold text-slate-500 mt-2 uppercase tracking-wide">Petunjuk Penggunaan</span>
+    </footer>
+
+  </main>
+
+  <div id="modalPetunjuk" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-4 border-amber-300 text-left transform scale-95 transition-all">
+      <h3 class="text-xl font-kids-title text-amber-500 mb-4 flex items-center gap-2">
+        💡 Panduan Ujian ASAJ
+      </h3>
+      <ol class="list-decimal list-inside space-y-3 text-slate-600 font-semibold text-sm leading-relaxed">
+        <li>Klik tombol warna-warni sesuai dengan <span class="text-indigo-600">Kelasmu</span>.</li>
+        <li>Masukkan <span class="text-indigo-600">Username</span> dan <span class="text-indigo-600">Password</span> yang telah dibagikan oleh guru kelas.</li>
+        <li>Pilih paket ujian mata pelajaran yang aktif hari ini.</li>
+        <li>Kerjakan soal dengan tenang, teliti, dan mandiri.</li>
+        <li>Periksa kembali sebelum menekan tombol <span class="text-emerald-500">Kirim Jawaban</span>.</li>
+      </ol>
+      <button onclick="tutupPetunjuk()" class="mt-6 w-full bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl transition-colors shadow-md">
+        Mengerti, Terima Kasih!
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // URL API yang mengarah langsung ke Web App Google Apps Script Anda
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
+
+    // Daftar pilihan warna cerah acak untuk tombol kelas anak SD
+    const paletWarna = [
+      { bg: '#FF5964', shadow: '#CC4750', text: '#FFFFFF' }, // Merah
+      { bg: '#35A7FF', shadow: '#2A86CC', text: '#FFFFFF' }, // Biru
+      { bg: '#38B000', shadow: '#2D8C00', text: '#FFFFFF' }, // Hijau
+      { bg: '#FFB703', shadow: '#CC9202', text: '#000000' }, // Kuning
+      { bg: '#9B5DE5', shadow: '#7C4AB7', text: '#FFFFFF' }, // Ungu
+      { bg: '#00F5D4', shadow: '#00C4AA', text: '#1E293B' }, // Tosca
+      { bg: '#F15BB5', shadow: '#C14991', text: '#FFFFFF' }  // Pink
+    ];
+
+    // Ambil data otomatis saat halaman selesai dimuat di GitHub Pages
+    window.addEventListener('DOMContentLoaded', () => {
+      muatTombolKelas();
+    });
+
+    /**
+     * Memanggil API Apps Script menggunakan Fetch API modern
+     */
+    function muatTombolKelas() {
+      // Mengirim request GET ke: URL_KITA?action=ambilKelas
+      fetch(`${API_URL}?action=ambilKelas`)
+        .then(response => response.json())
+        .then(response => {
+          const loader = document.getElementById('loader');
+          const container = document.getElementById('container-tombol-kelas');
+          
+          if (response.status === 'success' && response.data.length > 0) {
+            loader.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            // Loop data kelas yang dikirim oleh Spreadsheet
+            response.data.forEach((kelas, index) => {
+              const warna = paletWarna[index % paletWarna.length];
+              
+              const tombol = document.createElement('button');
+              tombol.innerText = kelas.nama;
+              tombol.className = "btn-3d font-bold py-4 px-2 rounded-2xl text-lg md:text-xl transition-all transform hover:scale-105";
+              
+              // Memberikan style warna dinamis dan bayangan 3D
+              tombol.style.backgroundColor = warna.bg;
+              tombol.style.color = warna.text;
+              tombol.style.boxShadow = `0 8px 0 ${warna.shadow}`;
+              
+              // Mengarahkan ke halaman login kelas terkait
+              tombol.onclick = () => prosesNavigasi(kelas.id);
+              
+              container.appendChild(tombol);
+            });
+          } else {
+            loader.innerHTML = `<p class="text-sm font-bold text-red-500">Gagal memuat kelas: ${response.message || 'Data Kosong'}</p>`;
+          }
+        })
+        .catch(err => {
+          console.error("Error Fetch:", err);
+          document.getElementById('loader').innerHTML = `<p class="text-sm font-bold text-red-500">Terjadi kesalahan koneksi ke server API.</p>`;
+        });
+    }
+
+    /**
+     * Logika Navigasi: Mengarahkan siswa ke halaman login kelas (misal login.html?kelas=KLS-01)
+     */
+    function prosesNavigasi(idKelas) {
+      // Di masa depan, ubah 'login.html' sesuai nama file form login Anda di GitHub
+      window.location.href = `login.html?kelas=${encodeURIComponent(idKelas)}`;
+    }
+
+    // Fungsi Kontrol Tampilan Modal Petunjuk Penggunaan
+    function bukaPetunjuk() {
+      const modal = document.getElementById('modalPetunjuk');
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.firstElementChild.classList.remove('scale-95');
+        modal.firstElementChild.classList.add('scale-100');
+      }, 10);
+    }
+
+    function tutupPetunjuk() {
+      const modal = document.getElementById('modalPetunjuk');
+      modal.firstElementChild.classList.remove('scale-100');
+      modal.firstElementChild.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 150);
+    }
+  </script>
+</body>
+</html>
