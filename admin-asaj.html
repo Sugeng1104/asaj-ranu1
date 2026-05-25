@@ -5,235 +5,92 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - ASAJ SDN Ranuklindungan I</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2 family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    }
-    .font-kids-title {
-      font-family: 'Fredoka One', cursive;
-    }
-    /* Animasi Tombol Timbul 3D */
-    .btn-3d {
-      transition: all 0.1s ease;
-    }
-    .btn-3d:active {
-      transform: translateY(6px) !important;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important;
-    }
+    body { font-family: 'Nunito', sans-serif; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); }
+    .font-kids-title { font-family: 'Fredoka One', cursive; }
+    .btn-3d { transition: all 0.1s ease; }
+    .btn-3d:active { transform: translateY(6px) !important; box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important; }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-center items-center p-6 text-white relative">
+<body class="min-h-screen flex flex-col justify-center items-center p-4 md:p-6 text-white relative">
 
-  <div class="absolute top-4 left-4">
-    <a href="index.html" class="bg-slate-700 hover:bg-slate-600 font-bold py-2 px-4 rounded-xl text-sm transition-all inline-flex items-center gap-2">
-      ⬅ Kembali ke Beranda
+  <div class="absolute top-4 left-4 z-10">
+    <a href="index.html" class="bg-slate-700 hover:bg-slate-600 font-bold py-2 px-4 rounded-xl text-sm transition-all inline-flex items-center gap-2 shadow-md">
+      ⬅ Beranda Utama
     </a>
   </div>
 
-  <div id="loader-halaman" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-50">
+  <div id="loader-halaman" class="hidden fixed inset-0 bg-slate-950/70 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-50">
     <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-    <p class="font-semibold text-slate-300">Menghubungkan ke server Spreadsheet...</p>
+    <p id="txt-loader" class="font-semibold text-slate-300">Menghubungkan ke server Spreadsheet...</p>
   </div>
 
   <div id="popupPilihKelas" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-40">
     <div class="bg-slate-800 rounded-3xl max-w-4xl w-full p-8 shadow-2xl border-4 border-blue-500/50 text-center">
-      <h2 class="text-3xl md:text-4xl font-kids-title text-blue-400 tracking-wide mb-2">
-        Hiii.... Guru
-      </h2>
+      <h2 class="text-3xl md:text-4xl font-kids-title text-blue-400 tracking-wide mb-2">Hiii.... Guru</h2>
       <p class="text-lg text-slate-300 font-semibold mb-8">silahkan pilih kelas</p>
       
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 pt-2 pb-4">
-        
-        <button onclick="verifikasiAksesKelas('KLS-01', 'Kelas 1')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white transform hover:scale-105" style="background-color: #FF5964; box-shadow: 0 8px 0 #CC4750;">
-          Kelas 1
-        </button>
-        
-        <button onclick="verifikasiAksesKelas('KLS-02', 'Kelas 2')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white transform hover:scale-105" style="background-color: #35A7FF; box-shadow: 0 8px 0 #2A86CC;">
-          Kelas 2
-        </button>
-        
-        <button onclick="verifikasiAksesKelas('KLS-03', 'Kelas 3')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white transform hover:scale-105" style="background-color: #38B000; box-shadow: 0 8px 0 #2D8C00;">
-          Kelas 3
-        </button>
-        
-        <button onclick="verifikasiAksesKelas('KLS-04', 'Kelas 4')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-black transform hover:scale-105" style="background-color: #FFB703; box-shadow: 0 8px 0 #CC9202;">
-          Kelas 4
-        </button>
-        
-        <button onclick="verifikasiAksesKelas('KLS-05', 'Kelas 5')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white transform hover:scale-105" style="background-color: #9B5DE5; box-shadow: 0 8px 0 #7C4AB7;">
-          Kelas 5
-        </button>
-        
-        <button onclick="verifikasiAksesKelas('KLS-06', 'Kelas 6')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-slate-900 transform hover:scale-105" style="background-color: #00F5D4; box-shadow: 0 8px 0 #00C4AA;">
-          Kelas 6
-        </button>
-
+        <button onclick="verifikasiAksesKelas('KLS-01', 'Kelas 1')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #FF5964; box-shadow: 0 8px 0 #CC4750;">Kelas 1</button>
+        <button onclick="verifikasiAksesKelas('KLS-02', 'Kelas 2')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #35A7FF; box-shadow: 0 8px 0 #2A86CC;">Kelas 2</button>
+        <button onclick="verifikasiAksesKelas('KLS-03', 'Kelas 3')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #38B000; box-shadow: 0 8px 0 #2D8C00;">Kelas 3</button>
+        <button onclick="verifikasiAksesKelas('KLS-04', 'Kelas 4')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-black" style="background-color: #FFB703; box-shadow: 0 8px 0 #CC9202;">Kelas 4</button>
+        <button onclick="verifikasiAksesKelas('KLS-05', 'Kelas 5')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #9B5DE5; box-shadow: 0 8px 0 #7C4AB7;">Kelas 5</button>
+        <button onclick="verifikasiAksesKelas('KLS-06', 'Kelas 6')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-slate-900" style="background-color: #00F5D4; box-shadow: 0 8px 0 #00C4AA;">Kelas 6</button>
       </div>
     </div>
   </div>
 
   <div id="popupFormGuru" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-40">
-    <div class="bg-white text-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border-4 border-indigo-500 transform transition-all">
+    <div class="bg-white text-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border-4 border-indigo-500">
       <div class="flex justify-between items-center mb-4 border-b pb-2">
         <h3 id="judulForm" class="text-xl font-bold text-indigo-600">Form Pengisian</h3>
-        <button onclick="bukaPopupKelas()" class="text-indigo-500 hover:text-indigo-700 font-bold text-sm">🔄 Ganti Kelas</button>
+        <button onclick="bukaPopupKelas()" class="text-indigo-500 font-bold text-sm">🔄 Ganti Kelas</button>
       </div>
-
       <form id="formAdmin" onsubmit="prosesForm(event)" class="space-y-4">
         <input type="hidden" id="form_id_kelas">
         <input type="hidden" id="form_nama_kelas">
         
         <div id="container-nama-guru">
           <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Lengkap Guru</label>
-          <input type="text" id="form_nama_guru" class="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold" placeholder="Contoh: Budi Santoso, S.Pd.">
+          <input type="text" id="form_nama_guru" class="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold">
         </div>
-
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Username Admin Guru</label>
-          <input type="text" id="form_username" required class="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold" placeholder="Masukkan username">
+          <input type="text" id="form_username" required class="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold">
         </div>
-
         <div>
           <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Password</label>
-          <input type="password" id="form_password" required class="w-full px-4 py-2.5 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold" placeholder="Masukkan password">
+          <input type="password" id="form_password" required class="w-full px-4 py-2 border-2 border-slate-200 rounded-xl focus:border-indigo-500 focus:outline-none font-semibold">
         </div>
-
-        <button type="submit" id="btnSubmitForm" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-md mt-2">
-          Lanjutkan
-        </button>
+        <button type="submit" id="btnSubmitForm" class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl shadow-md">Lanjutkan</button>
       </form>
     </div>
   </div>
 
-  <div id="dashboardUtama" class="hidden w-full max-w-5xl bg-slate-800 rounded-3xl p-8 border border-slate-700 shadow-xl">
+  <div id="dashboardUtama" class="hidden w-full max-w-6xl bg-slate-900/90 border border-slate-700 rounded-3xl p-6 shadow-2xl my-6">
     <header class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-slate-700 pb-4 mb-6">
       <div>
         <h1 class="text-2xl font-bold text-blue-400 font-kids-title" id="txtSelamatDatang">Selamat Datang</h1>
-        <p class="text-sm text-slate-400" id="txtDetailKelas">Mengelola Data ASAJ</p>
+        <p class="text-sm text-slate-400 font-semibold" id="txtDetailKelas">Mengelola Data Ujian ASAJ</p>
       </div>
-      <button onclick="location.reload()" class="mt-4 sm:mt-0 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition-colors shadow-md">
-        Keluar Akun (Logout) 📴
-      </button>
+      <button onclick="location.reload()" class="mt-4 sm:mt-0 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-5 rounded-xl text-sm transition-all shadow-md">Keluar Panel 📴</button>
     </header>
-    
-    <div class="p-12 text-center border-4 border-dashed border-slate-700 rounded-2xl">
-      <p class="text-slate-400 font-medium">🎉 Selamat! Anda berhasil masuk ke Ruang Kontrol Admin Kelas. Modul penambahan bank soal dan manajemen nilai siap diintegrasikan di sini.</p>
-    </div>
-  </div>
 
-  <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
-    
-    let modeForm = 'LOGIN'; 
-    let kelasAktif = {};
+    <nav class="flex gap-2 border-b border-slate-700 pb-px mb-6 overflow-x-auto">
+      <button onclick="pindahTab('tab-peserta')" id="btn-tab-peserta" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-slate-800 text-blue-400 border-t-2 border-x-2 border-blue-500">👨‍Grad_Siswa Modul Peserta</button>
+      <button onclick="pindahTab('tab-soal')" id="btn-tab-soal" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-transparent text-slate-400 hover:text-slate-200">📚 Bank Soal</button>
+      <button onclick="pindahTab('tab-nilai')" id="btn-tab-nilai" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-transparent text-slate-400 hover:text-slate-200">🏆 Rekap Jawaban & Nilai</button>
+    </nav>
 
-    function bukaPopupKelas() {
-      document.getElementById('popupPilihKelas').classList.remove('hidden');
-      document.getElementById('popupFormGuru').classList.add('hidden');
-    }
-
-    /**
-     * Memeriksa status keberadaan Guru di baris Sheet berdasarkan ID Kelas yang diklik
-     */
-    function verifikasiAksesKelas(idKelas, namaKelas) {
-      kelasAktif = { id: idKelas, nama: namaKelas };
-      document.getElementById('loader-halaman').classList.remove('hidden');
-
-      fetch(`${API_URL}?action=cekStatusGuru&id_kelas=${encodeURIComponent(idKelas)}`)
-        .then(res => res.json())
-        .then(res => {
-          document.getElementById('loader-halaman').classList.add('hidden');
-          document.getElementById('popupPilihKelas').classList.add('hidden');
-          document.getElementById('popupFormGuru').classList.remove('hidden');
-          
-          document.getElementById('form_id_kelas').value = idKelas;
-          document.getElementById('form_nama_kelas').value = namaKelas;
-          document.getElementById('formAdmin').reset();
-
-          if(res.terdaftar === true) {
-            // JIKA GURU SUDAH ADA DI SHEET -> Mode Login
-            modeForm = 'LOGIN';
-            document.getElementById('judulForm').innerText = `Login Admin - ${namaKelas}`;
-            document.getElementById('container-nama-guru').classList.add('hidden');
-            document.getElementById('form_nama_guru').required = false;
-            document.getElementById('btnSubmitForm').innerText = `Masuk Sebagai Admin ${namaKelas}`;
-          } else {
-            // JIKA NAMA GURU MASIH KOSONG -> Mode Registrasi Data Otomatis
-            modeForm = 'REGISTRASI';
-            document.getElementById('judulForm').innerText = `Registrasi Guru Baru - ${namaKelas}`;
-            document.getElementById('container-nama-guru').classList.remove('hidden');
-            document.getElementById('form_nama_guru').required = true;
-            document.getElementById('btnSubmitForm').innerText = `Daftarkan Data Guru ${namaKelas}`;
-          }
-        })
-        .catch(err => {
-          document.getElementById('loader-halaman').classList.add('hidden');
-          alert('Gagal terhubung dengan server database Sheets.');
-        });
-    }
-
-    /**
-     * Memproses Pengiriman Data
-     */
-    function prosesForm(e) {
-      e.preventDefault();
-      
-      const idKls = document.getElementById('form_id_kelas').value;
-      const namaKls = document.getElementById('form_nama_kelas').value;
-      const user = document.getElementById('form_username').value;
-      const pass = document.getElementById('form_password').value;
-      
-      document.getElementById('popupFormGuru').classList.add('hidden');
-      document.getElementById('loader-halaman').classList.remove('hidden');
-
-      if (modeForm === 'REGISTRASI') {
-        const namaGuru = document.getElementById('form_nama_guru').value;
-        
-        // Mengirimkan data via POST untuk diinput otomatis beserta ID & Nama Kelas dari Tombol
-        fetch(API_URL, {
-          method: 'POST',
-          redirect: 'follow',
-          body: JSON.stringify({
-            action: 'registrasiGuru',
-            id_kelas: idKls,
-            nama_kelas: namaKls, // Otomatis terisi sesuai nama tombol yang di klik
-            username: user,
-            password: pass,
-            nama_guru: namaGuru
-          })
-        })
-        .then(res => res.json())
-        .then(res => {
-          document.getElementById('loader-halaman').classList.add('hidden');
-          if (res.status === 'success') {
-            alert(`Sukses! Akun Guru untuk ${namaKls} telah terdaftar otomatis dengan Kode: ${idKls}.\nSilahkan lakukan login.`);
-            verifikasiAksesKelas(idKls, namaKls);
-          } else {
-            alert('Gagal menyimpan data: ' + res.message);
-            document.getElementById('popupFormGuru').classList.remove('hidden');
-          }
-        });
-
-      } else {
-        // Melakukan validasi login data guru via parameter GET
-        fetch(`${API_URL}?action=loginGuru&id_kelas=${encodeURIComponent(idKls)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`)
-          .then(res => res.json())
-          .then(res => {
-            document.getElementById('loader-halaman').classList.add('hidden');
-            if(res.status === 'success') {
-              document.getElementById('dashboardUtama').classList.remove('hidden');
-              document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${res.nama_guru}!`;
-              document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data & Ujian ASAJ: ${namaKls}`;
-            } else {
-              alert('❌ Login Gagal: ' + res.message);
-              document.getElementById('popupFormGuru').classList.remove('hidden');
-            }
-          });
-      }
-    }
-  </script>
-</body>
-</html>
+    <section id="tab-peserta" class="space-y-6">
+      <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h3 class="text-lg font-bold text-white mb-1">Unggah Daftar Siswa Baru</h3>
+          <p class="text-xs text-slate-400 leading-relaxed mb-4">Unggah file Excel (`.xlsx`/`.xls`) dengan baris judul kolom harus bernama: <code class="text-amber-400 font-bold">id_siswa, username, token, nama_lengkap, status</code>.</p>
+          <div class="flex flex-wrap items-center gap-3">
+            <input type="file" id="inputExcelSiswa" accept=".xlsx, .xls, .csv" class="block text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
+            <button onclick="prosesFileExcel()" class="bg-amber-500 hover:bg-amber-600 text-slate-
