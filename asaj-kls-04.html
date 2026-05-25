@@ -22,7 +22,7 @@
             animation: pulseGlow 2s infinite alternate;
         }
         @keyframes pulseGlow {
-            0% { text-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 25px rgba(251, 191, 36, 0.6); }
+            0 { text-shadow: 0 0 12px rgba(251, 191, 36, 0.9), 0 0 25px rgba(251, 191, 36, 0.6); }
             100% { text-shadow: 0 0 18px rgba(251, 191, 36, 1), 0 0 35px rgba(251, 191, 36, 0.8); }
         }
     </style>
@@ -44,11 +44,11 @@
         <form id="login-form" onsubmit="prosesLoginSiswa(event)" class="space-y-4 text-left">
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Username Siswa</label>
-                <input type="text" id="username" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: achmad198">
+                <input type="text" id="username" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: ahmad321">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Token / PIN Ujian</label>
-                <input type="text" id="token" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-bold tracking-wider text-left focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: 791628">
+                <input type="password" id="token" required class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-bold tracking-widest text-center focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="••••••">
             </div>
             <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform transform active:scale-95 cursor-pointer mt-2 text-sm uppercase tracking-wider">
                 Mulai Ujian Sekarang 🚀
@@ -56,7 +56,7 @@
         </form>
     </div>
 
-    <div id="exam-section" class="hidden w-full max-w-4xl flex flex-col my-auto gap-6">
+    <div id="exam-section" class="hidden w-full max-w-4xl flex flex-col my-auto gap-6 animate-fade-in">
         <header class="bg-white rounded-2xl border-2 border-indigo-50 p-4 sm:p-6 shadow-md flex flex-col md:flex-row justify-between items-center gap-4">
             <div class="flex items-center gap-4 w-full md:w-auto">
                 <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl border border-indigo-100 hidden sm:block">
@@ -65,7 +65,7 @@
                     </svg>
                 </div>
                 <div class="text-center sm:text-left w-full">
-                    <h2 class="text-xl font-black text-slate-800" id="display-nama">Memuat Nama Siswa...</h2>
+                    <h2 class="text-xl font-black text-slate-800" id="display-nama">Memuat Nama...</h2>
                     <p class="text-xs font-bold text-indigo-500 uppercase tracking-wider">Peserta Ujian Aktif</p>
                 </div>
             </div>
@@ -130,7 +130,7 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
 
-        // Validasi Sesi Anti-Refresh
+        // PENCEGAHAN REFRESH: Jika halaman dimuat ulang, periksa session localstorage siswa
         document.addEventListener("DOMContentLoaded", function() {
             const sesiSiswa = localStorage.getItem("sesi_siswa_asaj_kls4");
             if (sesiSiswa) {
@@ -139,7 +139,7 @@
         });
 
         /**
-         * Proses Login Siswa & Pencocokan Kolom Database secara Akurat
+         * Mengambil & memvalidasi data login siswa ke database Sheet Data_Siswa
          */
         function prosesLoginSiswa(event) {
             event.preventDefault();
@@ -150,12 +150,12 @@
             btn.disabled = true;
             btn.innerText = "MENCOCOKKAN DATA...";
 
-            // Menembak Web App Apps Script berdasarkan parameter KLS-04
+            // Menembak data ke filter kelas KLS-04 secara dinamis
             fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success") {
-                        // SINKRONISASI TOTAL: Memastikan input user dan token dicocokkan dengan data array sheet yang ditarik dari backend
+                        // FIX LOGIN MATCHING: Sesuai urutan database gambar ke-2 Anda
                         const cocok = respon.data.find(s => 
                             s.username.toString().trim().toLowerCase() === inpUser.toLowerCase() && 
                             s.token.toString().trim() === inpToken.toString()
@@ -173,7 +173,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("Gagal terhubung ke database server. Pastikan Web App Anda sudah dideploy ke versi terbaru.");
+                    alert("Koneksi internet bermasalah atau Web App belum dideploy dengan benar.");
                 })
                 .finally(() => {
                     btn.disabled = false;
@@ -182,51 +182,50 @@
         }
 
         /**
-         * Membuka Halaman Utama & Memetakan Identitas Kolom nama_lengkap
+         * Membuka Dasbor Ujian & Memetakan Atribut Siswa
          */
         function bukaHalamanUjian(siswa) {
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("exam-section").classList.remove("hidden");
             
-            // Membaca data 'nama_lengkap' secara dinamis dari database untuk ditaruh di pojok kiri atas
+            // SINKRONISASI: Mengambil nilai dari kolom nama_lengkap secara dinamis
             document.getElementById("display-nama").innerText = siswa.nama_lengkap;
-            
             document.getElementById("display-idsiswa").innerText = siswa.id_siswa;
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || "AKTIF";
         }
 
         /**
-         * Penanganan Selesai Ujian & Logika Pewarnaan Nilai
+         * Proses Selesai Ujian & Logika Pewarnaan Nilai
          */
         function prosesSelesaiUjian() {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
             if (!dataSiswa) return;
 
-            const daftarNilaiSimulasi = [65, 80, 95, 100];
+            const daftarNilaiSimulasi = [65, 80, 92, 100];
             const skorAkhir = daftarNilaiSimulasi[Math.floor(Math.random() * daftarNilaiSimulasi.length)];
             
             document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap;
             
             const displaySkor = document.getElementById("score-display");
             displaySkor.innerText = skorAkhir;
-            displaySkor.className = "text-5xl font-black"; 
+            displaySkor.className = "text-5xl font-black"; // Reset warna default
 
             if (skorAkhir < 70) {
-                displaySkor.classList.add("text-red-600");
+                displaySkor.classList.add("text-red-600");          
             } else if (skorAkhir >= 70 && skorAkhir <= 89) {
-                displaySkor.classList.add("text-blue-600");
+                displaySkor.classList.add("text-blue-600");         
             } else if (skorAkhir >= 90 && skorAkhir <= 99) {
-                displaySkor.classList.add("text-amber-500");
+                displaySkor.classList.add("text-amber-500");        
             } else if (skorAkhir === 100) {
-                displaySkor.classList.add("emas-menyala");
+                displaySkor.classList.add("emas-menyala");          
             }
 
             document.getElementById("success-modal").classList.remove("hidden");
         }
 
         /**
-         * Logout Sistem
+         * Keluar & Hapus Sesi
          */
         function logoutSiswa() {
             localStorage.removeItem("sesi_siswa_asaj_kls4");
