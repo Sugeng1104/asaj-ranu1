@@ -44,11 +44,11 @@
         <form id="login-form" onsubmit="prosesLoginSiswa(event)" class="space-y-4 text-left">
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Username Siswa</label>
-                <input type="text" id="username" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: ahmad321">
+                <input type="text" id="username" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-semibold focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: achmad198">
             </div>
             <div>
                 <label class="block text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Token / PIN Ujian</label>
-                <input type="password" id="token" required class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-bold tracking-widest text-center focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="•••••">
+                <input type="text" id="token" required autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-200 rounded-xl font-bold tracking-wider text-left focus:border-indigo-500 focus:ring-0 outline-none transition-colors" placeholder="Contoh: 791628">
             </div>
             <button type="submit" id="btn-login" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 rounded-xl shadow-lg transition-transform transform active:scale-95 cursor-pointer mt-2 text-sm uppercase tracking-wider">
                 Mulai Ujian Sekarang 🚀
@@ -128,10 +128,9 @@
     </footer>
 
     <script>
-        // Tautan API URL Web App Google Apps Script Anda
         const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
 
-        // PENCEGAHAN REFRESH: Jika halaman dimuat ulang, baca session dan kunci nama dari kolom nama_lengkap
+        // Validasi Sesi Anti-Refresh
         document.addEventListener("DOMContentLoaded", function() {
             const sesiSiswa = localStorage.getItem("sesi_siswa_asaj_kls4");
             if (sesiSiswa) {
@@ -140,7 +139,7 @@
         });
 
         /**
-         * Mengambil & memvalidasi data login siswa ke database Sheet Data_Siswa
+         * Proses Login Siswa & Pencocokan Kolom Database secara Akurat
          */
         function prosesLoginSiswa(event) {
             event.preventDefault();
@@ -151,16 +150,18 @@
             btn.disabled = true;
             btn.innerText = "MENCOCOKKAN DATA...";
 
-            // Memanggil database dari sub-kelas KLS-04
+            // Menembak Web App Apps Script berdasarkan parameter KLS-04
             fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success") {
-                        // Mencocokkan data login dengan kolom database username & token
-                        const cocok = respon.data.find(s => s.username === inpUser && s.token === inpToken);
+                        // SINKRONISASI TOTAL: Memastikan input user dan token dicocokkan dengan data array sheet yang ditarik dari backend
+                        const cocok = respon.data.find(s => 
+                            s.username.toString().trim().toLowerCase() === inpUser.toLowerCase() && 
+                            s.token.toString().trim() === inpToken.toString()
+                        );
                         
                         if (cocok) {
-                            // Rekam sesi localstorage agar anti-refresh
                             localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
                             bukaHalamanUjian(cocok);
                         } else {
@@ -172,7 +173,7 @@
                 })
                 .catch(err => {
                     console.error(err);
-                    alert("Gagal terhubung ke server database.");
+                    alert("Gagal terhubung ke database server. Pastikan Web App Anda sudah dideploy ke versi terbaru.");
                 })
                 .finally(() => {
                     btn.disabled = false;
@@ -181,13 +182,13 @@
         }
 
         /**
-         * Menampilkan Dashboard & Menyuntikkan data kolom nama_lengkap ke Elemen Identitas
+         * Membuka Halaman Utama & Memetakan Identitas Kolom nama_lengkap
          */
         function bukaHalamanUjian(siswa) {
             document.getElementById("login-section").classList.add("hidden");
             document.getElementById("exam-section").classList.remove("hidden");
             
-            // SINKRONISASI UTAMA: Mengganti teks tiruan dengan isi kolom nama_lengkap dari database
+            // Membaca data 'nama_lengkap' secara dinamis dari database untuk ditaruh di pojok kiri atas
             document.getElementById("display-nama").innerText = siswa.nama_lengkap;
             
             document.getElementById("display-idsiswa").innerText = siswa.id_siswa;
@@ -196,40 +197,36 @@
         }
 
         /**
-         * Proses Selesai Ujian & Logika Pewarnaan Nilai Sesuai Aturan Kriteria
+         * Penanganan Selesai Ujian & Logika Pewarnaan Nilai
          */
         function prosesSelesaiUjian() {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
             if (!dataSiswa) return;
 
-            // Simulasi pengujian nilai acak: 65 (Merah), 80 (Biru), 95 (Emas), 100 (Emas Menyala)
             const daftarNilaiSimulasi = [65, 80, 95, 100];
             const skorAkhir = daftarNilaiSimulasi[Math.floor(Math.random() * daftarNilaiSimulasi.length)];
             
-            // Set nama lengkap di dalam teks modal pengumuman
             document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap;
             
             const displaySkor = document.getElementById("score-display");
             displaySkor.innerText = skorAkhir;
-            displaySkor.className = "text-5xl font-black"; // Reset style dasar warna
+            displaySkor.className = "text-5xl font-black"; 
 
-            // PROSES WARNA DI KONTROL OLEH LOGIKA JAVASCRIPT:
             if (skorAkhir < 70) {
-                displaySkor.classList.add("text-red-600");          // Merah jika di bawah 70
+                displaySkor.classList.add("text-red-600");
             } else if (skorAkhir >= 70 && skorAkhir <= 89) {
-                displaySkor.classList.add("text-blue-600");         // Biru jika 70 sampai 89
+                displaySkor.classList.add("text-blue-600");
             } else if (skorAkhir >= 90 && skorAkhir <= 99) {
-                displaySkor.classList.add("text-amber-500");        // Emas jika 90 sampai 99
+                displaySkor.classList.add("text-amber-500");
             } else if (skorAkhir === 100) {
-                displaySkor.classList.add("emas-menyala");          // Emas Menyala jika nilai 100
+                displaySkor.classList.add("emas-menyala");
             }
 
-            // Membuka jendela modal
             document.getElementById("success-modal").classList.remove("hidden");
         }
 
         /**
-         * Keluar, hapus rekaman sesi, dan bersihkan form login
+         * Logout Sistem
          */
         function logoutSiswa() {
             localStorage.removeItem("sesi_siswa_asaj_kls4");
