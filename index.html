@@ -25,9 +25,18 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between items-center p-6 text-slate-800">
+<body class="min-h-screen flex flex-col justify-between items-center p-6 text-slate-800 relative">
 
-  <main class="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8 my-auto text-center border-4 border-indigo-100 relative">
+  <div class="absolute top-4 right-4 z-40">
+    <a href="admin-asaj.html" class="btn-3d inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl text-sm shadow-[0_4px_0_#1d4ed8] hover:shadow-[0_4px_0_#1e40af] active:translate-y-1 active:shadow-none transition-all">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      Admin
+    </a>
+  </div>
+
+  <main class="w-full max-w-4xl bg-white rounded-3xl shadow-xl p-8 my-auto text-center border-4 border-indigo-100 relative mt-12 sm:mt-auto">
     
     <header class="flex flex-col items-center mb-6">
       <img src="https://placehold.co/120x120/3b82f6/ffffff?text=Logo+SD" alt="Logo SD" class="w-24 h-24 object-contain mb-4 drop-shadow-md animate-bounce" style="animation-duration: 3s;">
@@ -99,16 +108,15 @@
       { bg: '#F15BB5', shadow: '#C14991', text: '#FFFFFF' }  // Pink
     ];
 
-    // Ambil data otomatis saat halaman selesai dimuat di GitHub Pages
+    // Ambil data otomatis saat halaman selesai dimuat di browser
     window.addEventListener('DOMContentLoaded', () => {
       muatTombolKelas();
     });
 
     /**
-     * Memanggil API Apps Script menggunakan Fetch API modern
+     * Memanggil API Apps Script menggunakan Fetch API
      */
     function muatTombolKelas() {
-      // Mengirim request GET ke: URL_KITA?action=ambilKelas
       fetch(`${API_URL}?action=ambilKelas`)
         .then(response => response.json())
         .then(response => {
@@ -148,10 +156,9 @@
     }
 
     /**
-     * Logika Navigasi: Mengarahkan siswa ke halaman login kelas (misal login.html?kelas=KLS-01)
+     * Logika Navigasi: Mengarahkan siswa ke halaman login kelas
      */
     function prosesNavigasi(idKelas) {
-      // Di masa depan, ubah 'login.html' sesuai nama file form login Anda di GitHub
       window.location.href = `login.html?kelas=${encodeURIComponent(idKelas)}`;
     }
 
