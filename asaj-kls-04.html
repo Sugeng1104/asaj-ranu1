@@ -20,19 +20,31 @@
         }
     </style>
 </head>
-<body class="bg-[#f8fafc] min-h-screen flex flex-col">
+<body class="bg-[#f8fafc] min-h-screen flex flex-col select-none">
+
+    <div id="block-screen" class="hidden fixed inset-0 bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 z-[999]">
+        <div class="bg-white rounded-[30px] p-8 max-w-md w-full text-center border-2 border-red-500 shadow-2xl">
+            <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl font-bold">⚠️</div>
+            <h3 class="text-xl font-black text-slate-800 mb-2">Layar Terkunci!</h3>
+            <p class="text-sm text-slate-500 mb-6">Ananda terdeteksi keluar dari mode Full Screen atau mencoba membuka aplikasi lain. Hubungi Proktor/Guru untuk membuka layar.</p>
+            <div class="space-y-4">
+                <input type="password" id="pin-proktor" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-center font-bold tracking-widest outline-none focus:border-red-500" placeholder="PIN PROKTOR GURU">
+                <button onclick="bukaKunciLayarProktor()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all cursor-pointer">Buka Kunci Layar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="login-section" class="flex-grow flex items-center justify-center p-6">
-        <div class="bg-white rounded-[30px] shadow-xl shadow-slate-200/60 p-10 w-full max-w-md border border-slate-100 text-center">
-            <h1 class="text-2xl font-bold text-slate-800 mb-2">Login Peserta</h1>
-            <p class="text-sm text-slate-400 mb-8 font-medium tracking-wide uppercase">ASAJ Kelas 4</p>
+        <div class="bg-white rounded-[30px] shadow-xl shadow-slate-200/60 p-10 w-full max-w-md border border-slate-100">
+            <h1 class="text-2xl font-bold text-slate-800 text-center mb-2">Login Peserta</h1>
+            <p class="text-sm text-slate-400 text-center mb-8 font-medium tracking-wide uppercase">ASAJ Kelas 4</p>
             
-            <form id="login-form" onsubmit="prosesLoginSiswa(event)" class="space-y-5 text-left">
-                <div>
+            <form id="login-form" onsubmit="prosesLoginSiswa(event)" class="space-y-5">
+                <div class="text-left">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Username</label>
-                    <input type="text" id="username" required autocomplete="off" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="Masukkan username">
+                    <input type="text" id="username" required autocomplete="off" class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-left" placeholder="Masukkan username">
                 </div>
-                <div>
+                <div class="text-left">
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Token / PIN</label>
                     <input type="password" id="token" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold tracking-[0.3em] text-center focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="••••••">
                 </div>
@@ -46,11 +58,19 @@
     <div id="exam-section" class="hidden flex-col flex-grow animate-fade-in">
         <header class="bg-white border-b border-slate-200 w-full px-8 py-4 shadow-sm">
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500 font-bold">✓</div>
-                    <div class="text-center sm:text-left">
-                        <h1 id="display-nama" class="text-xl font-extrabold text-slate-800 uppercase tracking-tight">Memuat Nama...</h1>
-                        <p class="text-[13px] text-slate-400 font-medium mt-0.5">Peserta ASAJ Kelas 4</p>
+                
+                <div class="flex items-start gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500 font-bold shrink-0 mt-1">✓</div>
+                    <div class="text-center sm:text-left flex flex-col gap-2">
+                        <div>
+                            <h1 id="display-nama" class="text-xl font-extrabold text-slate-800 uppercase tracking-tight">Memuat Nama...</h1>
+                            <p class="text-[13px] text-slate-400 font-medium mt-0.5">Peserta ASAJ Kelas 4</p>
+                        </div>
+                        
+                        <div class="w-28 h-21 bg-slate-900 rounded-xl overflow-hidden shadow-md border-2 border-blue-400 relative">
+                            <video id="webcam-monitor" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
+                            <div class="absolute bottom-1 left-1 bg-red-600 text-[8px] text-white px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider animate-pulse">REC</div>
+                        </div>
                     </div>
                 </div>
 
@@ -157,26 +177,30 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
         const GITHUB_USERNAME = 'sugeng1104'; 
         const GITHUB_REPO = 'asaj-ranu1';    
+        const PIN_PROKTOR_KUNCI = '1234'; // PIN bawaan proktor untuk membuka layar kunci siswa
 
         let dataSoalUjian = [];
         let indexSoalAktif = 0;
         let mapJawabanSiswa = {}; 
         let sisaWaktuDetik = 90 * 60; 
         let intervalTimer = null;
+        let isExamActive = false;
 
         document.addEventListener("DOMContentLoaded", function() {
             const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
             if (sesi) { 
-                // Cek penyimpanan backup waktu lokal jika siswa me-refresh halaman
                 const waktuLokal = localStorage.getItem("asaj_timer_kls4");
                 if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
                 
-                // Kembalikan jejak jawaban lokal yang sudah terisi sebelumnya (jika ada)
                 const mapLokal = localStorage.getItem("asaj_answers_kls4");
                 if (mapLokal) { mapJawabanSiswa = JSON.parse(mapLokal); }
 
                 bukaHalamanUjian(JSON.parse(sesi)); 
             }
+
+            // EVENT PROTEKSI: Deteksi jika siswa nekat keluar dari mode Full Screen
+            document.addEventListener('fullscreenchange', handleFullScreenSecurity);
+            document.addEventListener('webkitfullscreenchange', handleFullScreenSecurity);
         });
 
         function prosesLoginSiswa(event) {
@@ -223,8 +247,53 @@
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
 
+            isExamActive = true;
+            
+            aktifkanModeFullScreen();
+            nyalakanKameraPengawas();
             jalankanTimerUjian();
             muatMasterSoal();
+        }
+
+        // FUNGSI PAKSA MASUK MODE FULL SCREEN
+        function aktifkanModeFullScreen() {
+            const docEl = document.documentElement;
+            if (docEl.requestFullscreen) { docEl.requestFullscreen(); }
+            else if (docEl.webkitRequestFullscreen) { docEl.webkitRequestFullscreen(); }
+        }
+
+        // DETEKSI KECURANGAN JIKA JUMLAH LAYAR LEPAS DARI FULLSCREEN
+        function handleFullScreenSecurity() {
+            if (!isExamActive) return;
+            const isFull = document.fullscreenElement || document.webkitFullscreenElement;
+            if (!isFull) {
+                document.getElementById("block-screen").classList.remove("hidden");
+            }
+        }
+
+        function bukaKunciLayarProktor() {
+            const pinInput = document.getElementById("pin-proktor").value;
+            if (pinInput === PIN_PROKTOR_KUNCI) {
+                document.getElementById("block-screen").classList.add("hidden");
+                document.getElementById("pin-proktor").value = "";
+                aktifkanModeFullScreen(); // Paksa masuk full screen lagi
+            } else {
+                alert("PIN Proktor Salah! Layar tetap terkunci.");
+            }
+        }
+
+        // FUNGSI UTAMA MENYALAKAN WEBCAM MONITOR SISWA
+        function nyalakanKameraPengawas() {
+            const video = document.getElementById("webcam-monitor");
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { aspectRatio: 4/3 } })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function(err) {
+                    console.log("Akses Kamera Ditolak/Tidak Ditemukan: ", err);
+                });
+            }
         }
 
         function jalankanTimerUjian() {
@@ -237,7 +306,7 @@
                     return;
                 }
                 sisaWaktuDetik--;
-                localStorage.setItem("asaj_timer_kls4", sisaWaktuDetik); // REKAM DETIK BERJALAN KONTINU
+                localStorage.setItem("asaj_timer_kls4", sisaWaktuDetik);
                 
                 const menit = Math.floor(sisaWaktuDetik / 60).toString().padStart(2, '0');
                 const detik = (sisaWaktuDetik % 60).toString().padStart(2, '0');
@@ -289,7 +358,7 @@
                 const btnNo = document.createElement("button");
                 btnNo.type = "button";
                 btnNo.id = `btn-no-${idx}`;
-                btnNo.innerText = soal.nomor_soal;
+                btnNo.innerText = soared = soal.nomor_soal;
                 btnNo.className = "py-3 text-sm font-bold rounded-xl border text-center transition-all cursor-pointer";
                 updateWarnaNomorSatuPerSatu(idx, btnNo);
                 btnNo.onclick = () => tampilkanSoalSpesifik(idx);
@@ -370,15 +439,15 @@
 
         function pilihJawabanSiswa(opsiPilihan) {
             mapJawabanSiswa[indexSoalAktif] = opsiPilihan;
-            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); // backup lokal
+            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); 
             tampilkanSoalSpesifik(indexSoalAktif); 
-            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); // SINKRONISASI CLOUD OTOMATIS
+            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); 
         }
 
         function pilihJawabanIsian(nilaiTeks) {
             mapJawabanSiswa[indexSoalAktif] = nilaiTeks.trim().toUpperCase();
-            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); // backup lokal
-            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); // SINKRONISASI CLOUD OTOMATIS
+            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); 
+            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); 
         }
 
         function soalSebelumnya() {
@@ -393,7 +462,6 @@
             }
         }
 
-        // FUNGSI HITUNG SKOR & KIRIM DATA KE SHEET JAWABAN_SISWA
         function kirimKeSpreadsheetOtomatis(statusUjian) {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
             if (!dataSiswa || dataSoalUjian.length === 0) return;
@@ -406,12 +474,8 @@
                 const key = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
                 const bobot = parseFloat(soal.bobot_nilai || 0);
 
-                // Rekam format nomor_soal:jawaban (Contoh: "1:A")
                 barisJawaban.push(`${soal.nomor_soal}:${ans === "" ? "-" : ans}`);
-
-                if (ans === key && key !== "") {
-                    totalSkorSiswa += bobot;
-                }
+                if (ans === key && key !== "") { totalSkorSiswa += bobot; }
             });
 
             const payload = {
@@ -419,16 +483,12 @@
                 id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA || "-",
                 id_kelas: "KLS-04",
                 mata_pelajaran: dataSoalUjian[0].mata_pelajaran || "UMUM",
-                daftar_jawaban: barisJawaban.join(", "), // Gabungan list jawaban string
+                daftar_jawaban: barisJawaban.join(", "), 
                 nilai_akhir: totalSkorSiswa,
                 status_ujian: statusUjian
             };
 
-            // Kirim menggunakan metode POST beacon/fetch tanpa mengganggu kenyamanan mengetik siswa
-            fetch(API_URL, {
-                method: "POST",
-                body: JSON.stringify(payload)
-            })
+            fetch(API_URL, { method: "POST", body: JSON.stringify(payload) })
             .then(res => res.json())
             .then(res => console.log("Cloud Sync: ", res.message))
             .catch(err => console.error("Cloud Sync Gagal: ", err));
@@ -438,11 +498,18 @@
 
         function prosesSelesaiUjian() {
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
+                isExamActive = false;
                 clearInterval(intervalTimer);
                 
-                // Kirim status akhir "SELESAI" dan ambil nilai murni finalnya
-                const nilaiFinal = kirimKeSpreadsheetOtomatis("SELESAI");
+                // Matikan kamera saat ujian selesai
+                const video = document.getElementById("webcam-monitor");
+                if (video.srcObject) {
+                    video.srcObject.getTracks().forEach(track => track.stop());
+                }
 
+                if (document.exitFullscreen) { document.exitFullscreen(); }
+
+                const nilaiFinal = kirimKeSpreadsheetOtomatis("SELESAI");
                 const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
                 document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
                 
@@ -457,7 +524,6 @@
 
                 document.getElementById("success-modal").classList.remove("hidden");
                 
-                // Bersihkan sampah timer agar tidak mengganggu ujian berikutnya
                 localStorage.removeItem("asaj_timer_kls4");
                 localStorage.removeItem("asaj_answers_kls4");
             }
