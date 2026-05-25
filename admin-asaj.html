@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - ASAJ SDN Ranuklindungan I</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2 family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   
   <style>
@@ -34,7 +34,7 @@
       <p class="text-lg text-slate-300 font-semibold mb-8">silahkan pilih kelas</p>
       
       <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 pt-2 pb-4">
-        <button onclick="verifikasiAksesKelas('KLS-01', 'Kelas 1')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #FF5964; box-shadow: 0 8px 0 #CC4750;">Kelas 1</button>
+        <button onclick="verifikasiAksesKelas('KLS-01', 'Kelas 1')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white animate-bounce-short" style="background-color: #FF5964; box-shadow: 0 8px 0 #CC4750;">Kelas 1</button>
         <button onclick="verifikasiAksesKelas('KLS-02', 'Kelas 2')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #35A7FF; box-shadow: 0 8px 0 #2A86CC;">Kelas 2</button>
         <button onclick="verifikasiAksesKelas('KLS-03', 'Kelas 3')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-white" style="background-color: #38B000; box-shadow: 0 8px 0 #2D8C00;">Kelas 3</button>
         <button onclick="verifikasiAksesKelas('KLS-04', 'Kelas 4')" class="btn-3d font-bold py-4 px-2 rounded-2xl text-lg text-black" style="background-color: #FFB703; box-shadow: 0 8px 0 #CC9202;">Kelas 4</button>
@@ -81,7 +81,7 @@
     </header>
 
     <nav class="flex gap-2 border-b border-slate-700 pb-px mb-6 overflow-x-auto">
-      <button onclick="pindahTab('tab-peserta')" id="btn-tab-peserta" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-slate-800 text-blue-400 border-t-2 border-x-2 border-blue-500">👨‍Grad_Siswa Modul Peserta</button>
+      <button onclick="pindahTab('tab-peserta')" id="btn-tab-peserta" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-slate-800 text-blue-400 border-t-2 border-x-2 border-blue-500">👨‍🎓 Modul Peserta</button>
       <button onclick="pindahTab('tab-soal')" id="btn-tab-soal" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-transparent text-slate-400 hover:text-slate-200">📚 Bank Soal</button>
       <button onclick="pindahTab('tab-nilai')" id="btn-tab-nilai" class="px-5 py-2.5 rounded-t-xl font-bold text-sm bg-transparent text-slate-400 hover:text-slate-200">🏆 Rekap Jawaban & Nilai</button>
     </nav>
@@ -93,4 +93,383 @@
           <p class="text-xs text-slate-400 leading-relaxed mb-4">Unggah file Excel (`.xlsx`/`.xls`) dengan baris judul kolom harus bernama: <code class="text-amber-400 font-bold">id_siswa, username, token, nama_lengkap, status</code>.</p>
           <div class="flex flex-wrap items-center gap-3">
             <input type="file" id="inputExcelSiswa" accept=".xlsx, .xls, .csv" class="block text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
-            <button onclick="prosesFileExcel()" class="bg-amber-500 hover:bg-amber-600 text-slate-
+            <button onclick="prosesFileExcel()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-black px-4 py-2 rounded-xl text-xs transition-colors">Baca Data Excel 📊</button>
+          </div>
+        </div>
+        <div class="flex justify-end">
+          <button onclick="simpanPesertaMassal()" id="btnBuatPeserta" disabled class="w-full md:w-auto bg-slate-600 text-slate-400 font-bold px-8 py-4 rounded-xl text-sm btn-3d shadow-md cursor-not-allowed">
+            🚀 BUAT PESERTA (Simpan ke Spreadsheet)
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+        <div class="p-4 bg-slate-900/60 font-bold text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">Daftar Siswa di Kelas Ini:</div>
+        <div class="overflow-x-auto max-h-80">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-900 text-slate-300 font-bold border-b border-slate-700 text-xs">
+                <th class="p-3">ID SISWA</th>
+                <th class="p-3">NAMA LENGKAP</th>
+                <th class="p-3">USERNAME</th>
+                <th class="p-3">TOKEN LOGIN</th>
+                <th class="p-3">STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-siswa" class="divide-y divide-slate-700 font-medium text-slate-300">
+              <tr><td colspan="5" class="p-8 text-center text-slate-500 text-xs">Belum ada data siswa.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-soal" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 text-slate-800">
+          <h3 class="text-md font-bold text-white mb-4">📝 Tambah Soal Baru</h3>
+          <form id="formTambahSoal" onsubmit="simpanSoalTunggal(event)" class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Mata Pelajaran</label>
+              <input type="text" id="soal_mapel" required class="w-full px-3 py-2 border rounded-xl font-semibold uppercase" placeholder="Contoh: MATEMATIKA">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Jenis Soal</label>
+              <select id="soal_jenis" onchange="toggleFormPilihan()" class="w-full px-3 py-2 border rounded-xl font-semibold">
+                <option value="PILIHAN GANDA">PILIHAN GANDA (PG)</option>
+                <option value="ISIAN">ISIAN SINGKAT</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Butir Pertanyaan</label>
+              <textarea id="soal_tanya" required class="w-full px-3 py-2 border rounded-xl font-semibold h-20" placeholder="Tulis soal disini..."></textarea>
+            </div>
+            
+            <div id="container-pg-input" class="space-y-2">
+              <div><input type="text" id="soal_a" class="w-full px-3 py-1.5 border rounded-lg" placeholder="Pilihan A"></div>
+              <div><input type="text" id="soal_b" class="w-full px-3 py-1.5 border rounded-lg" placeholder="Pilihan B"></div>
+              <div><input type="text" id="soal_c" class="w-full px-3 py-1.5 border rounded-lg" placeholder="Pilihan C"></div>
+              <div><input type="text" id="soal_d" class="w-full px-3 py-1.5 border rounded-lg" placeholder="Pilihan D"></div>
+            </div>
+
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Kunci Jawaban</label>
+              <input type="text" id="soal_kunci" required class="w-full px-3 py-2 border rounded-xl font-semibold uppercase" placeholder="A/B/C/D atau kata kunci isian">
+            </div>
+            <div>
+              <label class="block text-slate-400 font-bold mb-1">Bobot Nilai</label>
+              <input type="number" id="soal_bobot" value="1" required class="w-full px-3 py-2 border rounded-xl font-semibold">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-md transition-all">Simpan Soal ke Bank 💾</button>
+          </form>
+        </div>
+
+        <div class="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+          <div class="p-4 bg-slate-900/60 font-bold text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">Database Soal Ujian Terpasang:</div>
+          <div class="overflow-x-auto max-h-[480px]">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-slate-900 text-slate-300 font-bold border-b border-slate-700 text-xs">
+                  <th class="p-3 text-center">ID</th>
+                  <th class="p-3">MAPEL</th>
+                  <th class="p-3">JENIS</th>
+                  <th class="p-3">PERTANYAAN</th>
+                  <th class="p-3 text-center">KUNCI</th>
+                  <th class="p-3 text-center">BOBOT</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-soal" class="divide-y divide-slate-700 text-xs text-slate-300">
+                <tr><td colspan="6" class="p-8 text-center text-slate-500">Belum ada koleksi soal untuk kelas ini.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="tab-nilai" class="hidden space-y-4">
+      <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+        <div class="p-4 bg-slate-900/60 flex justify-between items-center border-b border-slate-700">
+          <span class="font-bold text-xs uppercase tracking-wider text-slate-400">Rekap Nilai Real-Time Hasil Ujian Siswa</span>
+          <button onclick="ambilRekapNilaiSiswa()" class="bg-slate-700 hover:bg-slate-600 px-3 py-1.5 rounded-lg text-xs font-bold transition-all">🔄 Segarkan Data</button>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-slate-900 text-slate-300 font-bold border-b border-slate-700 text-xs">
+                <th class="p-3">WAKTU SELESAI</th>
+                <th class="p-3">ID SISWA</th>
+                <th class="p-3">MATA PELAJARAN</th>
+                <th class="p-3">DAFTAR JAWABAN</th>
+                <th class="p-3 text-center">NILAI AKHIR</th>
+                <th class="p-3 text-center">STATUS</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-nilai" class="divide-y divide-slate-700 text-xs text-slate-300">
+              <tr><td colspan="6" class="p-8 text-center text-slate-500">Belum ada record lembar jawaban masuk dari siswa.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
+    let modeForm = 'LOGIN'; 
+    let kelasAktif = {};
+    let arraySiswaTemp = [];
+
+    function bukaPopupKelas() {
+      document.getElementById('popupPilihKelas').classList.remove('hidden');
+      document.getElementById('popupFormGuru').classList.add('hidden');
+    }
+
+    function verifikasiAksesKelas(idKelas, namaKelas) {
+      kelasAktif = { id: idKelas, nama: namaKelas };
+      setLoader(true, "Memeriksa status akses...");
+
+      fetch(`${API_URL}?action=cekStatusGuru&id_kelas=${encodeURIComponent(idKelas)}`)
+        .then(res => res.json())
+        .then(res => {
+          setLoader(false);
+          document.getElementById('popupPilihKelas').classList.add('hidden');
+          document.getElementById('popupFormGuru').classList.remove('hidden');
+          document.getElementById('form_id_kelas').value = idKelas;
+          document.getElementById('form_nama_kelas').value = namaKelas;
+          document.getElementById('formAdmin').reset();
+
+          if(res.terdaftar === true) {
+            modeForm = 'LOGIN';
+            document.getElementById('judulForm').innerText = `Login Admin - ${namaKelas}`;
+            document.getElementById('container-nama-guru').classList.add('hidden');
+            document.getElementById('btnSubmitForm').innerText = `Masuk Sebagai Admin ${namaKelas}`;
+          } else {
+            modeForm = 'REGISTRASI';
+            document.getElementById('judulForm').innerText = `Registrasi Guru Baru - ${namaKelas}`;
+            document.getElementById('container-nama-guru').classList.remove('hidden');
+            document.getElementById('btnSubmitForm').innerText = `Daftarkan Data Guru ${namaKelas}`;
+          }
+        })
+        .catch(err => {
+          setLoader(false);
+          alert("Gagal terhubung ke Google Sheets API.");
+        });
+    }
+
+    function prosesForm(e) {
+      e.preventDefault();
+      const idKls = document.getElementById('form_id_kelas').value;
+      const namaKls = document.getElementById('form_nama_kelas').value;
+      const user = document.getElementById('form_username').value;
+      const pass = document.getElementById('form_password').value;
+      document.getElementById('popupFormGuru').classList.add('hidden');
+
+      if (modeForm === 'REGISTRASI') {
+        const namaGuru = document.getElementById('form_nama_guru').value;
+        setLoader(true, "Menyimpan data pendaftaran guru...");
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({ action: 'registrasiGuru', id_kelas: idKls, nama_kelas: namaKls, username: user, password: pass, nama_guru: namaGuru })
+        })
+        .then(res => res.json())
+        .then(res => {
+          setLoader(false);
+          if (res.status === 'success') {
+            alert(`Akun guru sukses dibuat! Silakan masuk kembali.`);
+            verifikasiAksesKelas(idKls, namaKls);
+          } else { alert('Gagal: ' + res.message); }
+        });
+      } else {
+        setLoader(true, "Otentikasi data akun...");
+        fetch(`${API_URL}?action=loginGuru&id_kelas=${encodeURIComponent(idKls)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`)
+          .then(res => res.json())
+          .then(res => {
+            setLoader(false);
+            if(res.status === 'success') {
+              document.getElementById('dashboardUtama').classList.remove('hidden');
+              document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${res.nama_guru}!`;
+              document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data & Ujian ASAJ: ${namaKls}`;
+              
+              ambilDaftarSiswaTerdaftar();
+              ambilBankSoalUjian();
+              ambilRekapNilaiSiswa();
+            } else { alert('❌ ' + res.message); document.getElementById('popupFormGuru').classList.remove('hidden'); }
+          });
+      }
+    }
+
+    // PESERTA SISWA ENGINE
+    function prosesFileExcel() {
+      const fileInput = document.getElementById('inputExcelSiswa');
+      if (!fileInput.files.length) { alert("Pilih file excel!"); return; }
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      setLoader(true, "Ekstraksi data excel...");
+      
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+          if (!json.length) throw new Error();
+          
+          arraySiswaTemp = json;
+          renderTabelSiswa(arraySiswaTemp);
+          
+          const btn = document.getElementById('btnBuatPeserta');
+          btn.disabled = false;
+          btn.className = "w-full md:w-auto bg-emerald-500 hover:bg-emerald-600 text-slate-900 font-black px-8 py-4 rounded-xl text-sm btn-3d shadow-md cursor-pointer";
+          setLoader(false);
+        } catch(err) { setLoader(false); alert("Struktur Excel salah atau kosong."); }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function renderTabelSiswa(data) {
+      const tbody = document.getElementById('tbody-siswa');
+      tbody.innerHTML = '';
+      if(!data.length) { tbody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-slate-500 text-xs">Belum ada data siswa.</td></tr>`; return; }
+      
+      data.forEach(s => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-800/40 border-b border-slate-700">
+            <td class="p-3 font-mono text-amber-400">${s.id_siswa || '(Otomatis)'}</td>
+            <td class="p-3 uppercase font-bold text-white">${s.nama_lengkap || '-'}</td>
+            <td class="p-3">${s.username || '-'}</td>
+            <td class="p-3 font-mono text-emerald-400">${s.token || '(Otomatis)'}</td>
+            <td class="p-3"><span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded text-xs">${s.status || 'AKTIF'}</span></td>
+          </tr>`;
+      });
+    }
+
+    function simpanPesertaMassal() {
+      if(!arraySiswaTemp.length) return;
+      setLoader(true, "Mengunggah data siswa...");
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'simpanSiswaMassal', id_kelas: kelasAktif.id, data_siswa: arraySiswaTemp })
+      })
+      .then(res => res.json())
+      .then(res => {
+        setLoader(false);
+        if(res.status === 'success') {
+          alert(res.message);
+          document.getElementById('btnBuatPeserta').disabled = true;
+          document.getElementById('btnBuatPeserta').className = "w-full md:w-auto bg-slate-600 text-slate-400 font-bold px-8 py-4 rounded-xl text-sm btn-3d shadow-md cursor-not-allowed";
+          arraySiswaTemp = [];
+          document.getElementById('inputExcelSiswa').value = '';
+          ambilDaftarSiswaTerdaftar();
+        }
+      });
+    }
+
+    function ambilDaftarSiswaTerdaftar() {
+      fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=${encodeURIComponent(kelasAktif.id)}`)
+        .then(res => res.json()).then(res => { if(res.status==='success') renderTabelSiswa(res.data); });
+    }
+
+    // BANK SOAL ENGINE
+    function toggleFormPilihan() {
+      const jenis = document.getElementById('soal_jenis').value;
+      const container = document.getElementById('container-pg-input');
+      if(jenis === 'ISIAN') container.classList.add('hidden');
+      else container.classList.remove('hidden');
+    }
+
+    function simpanSoalTunggal(e) {
+      e.preventDefault();
+      setLoader(true, "Menyimpan butir soal...");
+      
+      const payload = {
+        id_kelas: kelasAktif.id,
+        mata_pelajaran: document.getElementById('soal_mapel').value.toUpperCase().trim(),
+        jenis_soal: document.getElementById('soal_jenis').value,
+        pertanyaan: document.getElementById('soal_tanya').value,
+        pilihan_a: document.getElementById('soal_a').value,
+        pilihan_b: document.getElementById('soal_b').value,
+        pilihan_c: document.getElementById('soal_c').value,
+        pilihan_d: document.getElementById('soal_d').value,
+        kunci_jawaban: document.getElementById('soal_kunci').value.toUpperCase().trim(),
+        bobot_nilai: document.getElementById('soal_bobot').value
+      };
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'tambahSoalTunggal', data_soal: payload })
+      })
+      .then(res => res.json())
+      .then(res => {
+        setLoader(false);
+        if(res.status === 'success') {
+          alert('Berhasil menyimpan soal baru!');
+          document.getElementById('formTambahSoal').reset();
+          toggleFormPilihan();
+          ambilBankSoalUjian();
+        } else { alert('Gagal: ' + res.message); }
+      });
+    }
+
+    function ambilBankSoalUjian() {
+      fetch(`${API_URL}?action=ambilBankSoal&id_kelas=${encodeURIComponent(kelasAktif.id)}`)
+        .then(res => res.json())
+        .then(res => {
+          const tbody = document.getElementById('tbody-soal');
+          tbody.innerHTML = '';
+          if(res.status === 'success' && res.data.length > 0) {
+            res.data.forEach(soal => {
+              tbody.innerHTML += `
+                <tr class="hover:bg-slate-800/40 border-b border-slate-700">
+                  <td class="p-3 font-mono text-center text-blue-400">${soal.id_soal}</td>
+                  <td class="p-3 font-bold">${soal.mata_pelajaran}</td>
+                  <td class="p-3 text-[10px]"><span class="bg-blue-500/10 text-blue-300 px-1.5 py-0.5 rounded">${soal.jenis_soal}</span></td>
+                  <td class="p-3 truncate max-w-xs">${soal.pertanyaan}</td>
+                  <td class="p-3 text-center font-bold text-amber-400">${soal.kunci_jawaban}</td>
+                  <td class="p-3 text-center font-bold">${soal.bobot_nilai}</td>
+                </tr>`;
+            });
+          } else { tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 text-xs">Belum ada koleksi soal untuk kelas ini.</td></tr>`; }
+        });
+    }
+
+    // REKAP NILAI ENGINE
+    function ambilRekapNilaiSiswa() {
+      fetch(`${API_URL}?action=ambilRekapNilai&id_kelas=${encodeURIComponent(kelasAktif.id)}`)
+        .then(res => res.json())
+        .then(res => {
+          const tbody = document.getElementById('tbody-nilai');
+          tbody.innerHTML = '';
+          if(res.status === 'success' && res.data.length > 0) {
+            res.data.forEach(row => {
+              tbody.innerHTML += `
+                <tr class="hover:bg-slate-800/40 border-b border-slate-700">
+                  <td class="p-3 font-mono text-slate-400">${row.timestamp || '-'}</td>
+                  <td class="p-3 font-bold text-amber-400">${row.id_siswa}</td>
+                  <td class="p-3 uppercase font-medium">${row.mata_pelajaran}</td>
+                  <td class="p-3 truncate max-w-xxs text-[11px] text-slate-400">${row.daftar_jawaban}</td>
+                  <td class="p-3 text-center font-black text-emerald-400 text-md">${row.nilai_akhir}</td>
+                  <td class="p-3 text-center"><span class="bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold text-[10px]">${row.status_ujian}</span></td>
+                </tr>`;
+            });
+          } else { tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 text-xs">Belum ada record lembar jawaban masuk dari siswa.</td></tr>`; }
+        });
+    }
+
+    function pindahTab(idTab) {
+      ['tab-peserta', 'tab-soal', 'tab-nilai'].forEach(t => { document.getElementById(t).classList.add('hidden'); });
+      document.getElementById(idTab).classList.remove('hidden');
+      ['btn-tab-peserta', 'btn-tab-soal', 'btn-tab-nilai'].forEach(b => {
+        document.getElementById(b).className = "px-5 py-2.5 rounded-t-xl font-bold text-sm bg-transparent text-slate-400 hover:text-slate-200";
+      });
+      document.getElementById('btn-' + idTab).className = "px-5 py-2.5 rounded-t-xl font-bold text-sm bg-slate-800 text-blue-400 border-t-2 border-x-2 border-blue-500";
+    }
+
+    function setLoader(tampilkan, teks = "Sedang memproses...") {
+      const loader = document.getElementById('loader-halaman');
+      document.getElementById('txt-loader').innerText = teks;
+      if (tampilkan) loader.classList.remove('hidden');
+      else loader.classList.add('hidden');
+    }
+  </script>
+</body>
+</html>
