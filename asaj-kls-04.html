@@ -77,7 +77,6 @@
         </header>
 
         <main class="max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start flex-grow">
-            
             <div class="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-md relative min-h-[450px] flex flex-col justify-between">
                 <div id="loading-soal" class="text-center text-slate-400 font-medium my-auto py-12">Mengunduh butir soal dari Master_Soal...</div>
                 
@@ -115,7 +114,7 @@
 
                         <div class="hidden space-y-2 bg-slate-50 p-5 rounded-2xl border border-slate-200" id="wrapper-opsi-isian">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Ketikkan Jawaban Singkat Ananda di Sini:</label>
-                            <input type="text" id="input-isian-siswa" oninput="simpanJawabanIsian(this.value)" autocomplete="off" class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-lg text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase" placeholder="Tulis jawaban di sini...">
+                            <input type="text" id="input-isian-siswa" onchange="pilihJawabanIsian(this.value)" autocomplete="off" class="w-full px-5 py-4 bg-white border-2 border-slate-200 rounded-xl font-bold text-lg text-slate-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase" placeholder="Tulis jawaban di sini...">
                         </div>
                     </div>
                 </div>
@@ -133,11 +132,9 @@
 
                 <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-md">
                     <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 text-center">Navigasi Nomor Soal</p>
-                    <div id="grid-nomor-wrapper" class="grid grid-cols-5 gap-2.5">
-                        </div>
+                    <div id="grid-nomor-wrapper" class="grid grid-cols-5 gap-2.5"></div>
                 </div>
             </div>
-
         </main>
     </div>
 
@@ -157,10 +154,7 @@
     </div>
 
     <script>
-        // Masukkan URL Web App Google Apps Script Anda yang sudah dideploy terbaru
         const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
-        
-        // KRUSIAL: Menyelaraskan nama dengan Apps Script Anda agar gambar tidak broken
         const GITHUB_USERNAME = 'sugeng1104'; 
         const GITHUB_REPO = 'asaj-ranu1';    
 
@@ -172,7 +166,17 @@
 
         document.addEventListener("DOMContentLoaded", function() {
             const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
-            if (sesi) { bukaHalamanUjian(JSON.parse(sesi)); }
+            if (sesi) { 
+                // Cek penyimpanan backup waktu lokal jika siswa me-refresh halaman
+                const waktuLokal = localStorage.getItem("asaj_timer_kls4");
+                if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
+                
+                // Kembalikan jejak jawaban lokal yang sudah terisi sebelumnya (jika ada)
+                const mapLokal = localStorage.getItem("asaj_answers_kls4");
+                if (mapLokal) { mapJawabanSiswa = JSON.parse(mapLokal); }
+
+                bukaHalamanUjian(JSON.parse(sesi)); 
+            }
         });
 
         function prosesLoginSiswa(event) {
@@ -229,10 +233,12 @@
                 if (sisaWaktuDetik <= 0) {
                     clearInterval(intervalTimer);
                     alert("Waktu habis! Jawaban Anda otomatis tersimpan.");
-                    prosesSelesaiUjian();
+                    kirimKeSpreadsheetOtomatis("SELESAI");
                     return;
                 }
                 sisaWaktuDetik--;
+                localStorage.setItem("asaj_timer_kls4", sisaWaktuDetik); // REKAM DETIK BERJALAN KONTINU
+                
                 const menit = Math.floor(sisaWaktuDetik / 60).toString().padStart(2, '0');
                 const detik = (sisaWaktuDetik % 60).toString().padStart(2, '0');
                 document.getElementById("exam-timer").innerText = `${menit}:${detik}`;
@@ -240,12 +246,10 @@
         }
 
         function muatMasterSoal() {
-            // Memanggil action 'ambilMasterSoal' (sudah didukung ganda di backend Apps Script teranyar)
             fetch(`${API_URL}?action=ambilMasterSoal&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
-                        
                         dataSoalUjian = respon.data.map(item => {
                             return {
                                 nomor_soal: item.nomor_soal || item.NOMOR_SOAL || 1,
@@ -262,23 +266,18 @@
                             };
                         });
 
-                        // Urutkan soal berdasarkan angka nomor_soal
                         dataSoalUjian.sort((a, b) => parseInt(a.nomor_soal) - parseInt(b.nomor_soal));
-
                         document.getElementById("loading-soal").classList.add("hidden");
                         document.getElementById("box-soal-inti").classList.remove("hidden");
                         
                         renderGridNomor();
-                        tampilkanSoalSpesifik(0);
+                        tampilkanSoalSpesifik(indexSoalAktif);
                     } else {
                         document.getElementById("loading-soal").innerText = "Tidak ada bank soal untuk kelas ini di Master_Soal.";
                     }
                 })
-                .catch((err) => {
-                    console.error(err);
-                    document.getElementById("loading-soal").innerHTML = `
-                        <div class="text-red-500 font-bold">Gagal memuat butir soal. Hubungi Proktor.</div>
-                    `;
+                .catch(() => {
+                    document.getElementById("loading-soal").innerHTML = `<div class="text-red-500 font-bold">Gagal memuat butir soal. Hubungi Proktor.</div>`;
                 });
         }
 
@@ -291,10 +290,8 @@
                 btnNo.type = "button";
                 btnNo.id = `btn-no-${idx}`;
                 btnNo.innerText = soal.nomor_soal;
-                
                 btnNo.className = "py-3 text-sm font-bold rounded-xl border text-center transition-all cursor-pointer";
                 updateWarnaNomorSatuPerSatu(idx, btnNo);
-
                 btnNo.onclick = () => tampilkanSoalSpesifik(idx);
                 wrapper.appendChild(btnNo);
             });
@@ -327,7 +324,6 @@
             document.getElementById("label-mapel").innerText = itemSoal.mata_pelajaran;
             document.getElementById("teks-pertanyaan").innerText = itemSoal.pertanyaan;
 
-            // RENDERING GAMBAR DARI REPO GITHUB DAN FOLDER TARGET YANG BENAR (img/kls-04/)
             const wadahImg = document.getElementById("wadah-gambar-soal");
             const imgEl = document.getElementById("img-soal");
             
@@ -340,7 +336,6 @@
                 imgEl.src = "";
             }
 
-            // KONDISIONAL BERDASARKAN JENIS SOAL (PILGAN vs ISIAN SINGKAT)
             const areaPg = document.getElementById("wrapper-opsi-pg");
             const areaIsian = document.getElementById("wrapper-opsi-isian");
             const inputIsian = document.getElementById("input-isian-siswa");
@@ -348,10 +343,8 @@
             if (itemSoal.jenis_soal === "ISIAN SINGKAT" || itemSoal.jenis_soal === "ISIAN") {
                 areaPg.classList.add("hidden");
                 areaIsian.classList.remove("hidden");
-                // Tampilkan kembali jawaban isian yang sempat ditulis sebelumnya jika ada
                 inputIsian.value = mapJawabanSiswa[idx] || "";
             } else {
-                // Default ke PILIHAN GANDA
                 areaIsian.classList.add("hidden");
                 areaPg.classList.remove("hidden");
 
@@ -377,11 +370,15 @@
 
         function pilihJawabanSiswa(opsiPilihan) {
             mapJawabanSiswa[indexSoalAktif] = opsiPilihan;
+            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); // backup lokal
             tampilkanSoalSpesifik(indexSoalAktif); 
+            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); // SINKRONISASI CLOUD OTOMATIS
         }
 
-        function simpanJawabanIsian(nilaiTeks) {
-            mapJawabanSiswa[indexSoalAktif] = nilaiTeks;
+        function pilihJawabanIsian(nilaiTeks) {
+            mapJawabanSiswa[indexSoalAktif] = nilaiTeks.trim().toUpperCase();
+            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); // backup lokal
+            kirimKeSpreadsheetOtomatis("BELUM SELESAI"); // SINKRONISASI CLOUD OTOMATIS
         }
 
         function soalSebelumnya() {
@@ -396,34 +393,73 @@
             }
         }
 
+        // FUNGSI HITUNG SKOR & KIRIM DATA KE SHEET JAWABAN_SISWA
+        function kirimKeSpreadsheetOtomatis(statusUjian) {
+            const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+            if (!dataSiswa || dataSoalUjian.length === 0) return;
+
+            let totalSkorSiswa = 0;
+            let barisJawaban = [];
+
+            dataSoalUjian.forEach((soal, idx) => {
+                const ans = (mapJawabanSiswa[idx] || "").toString().trim().toUpperCase();
+                const key = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
+                const bobot = parseFloat(soal.bobot_nilai || 0);
+
+                // Rekam format nomor_soal:jawaban (Contoh: "1:A")
+                barisJawaban.push(`${soal.nomor_soal}:${ans === "" ? "-" : ans}`);
+
+                if (ans === key && key !== "") {
+                    totalSkorSiswa += bobot;
+                }
+            });
+
+            const payload = {
+                action: "simpanJawabanSiswa",
+                id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA || "-",
+                id_kelas: "KLS-04",
+                mata_pelajaran: dataSoalUjian[0].mata_pelajaran || "UMUM",
+                daftar_jawaban: barisJawaban.join(", "), // Gabungan list jawaban string
+                nilai_akhir: totalSkorSiswa,
+                status_ujian: statusUjian
+            };
+
+            // Kirim menggunakan metode POST beacon/fetch tanpa mengganggu kenyamanan mengetik siswa
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(res => console.log("Cloud Sync: ", res.message))
+            .catch(err => console.error("Cloud Sync Gagal: ", err));
+
+            return totalSkorSiswa;
+        }
+
         function prosesSelesaiUjian() {
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
                 clearInterval(intervalTimer);
                 
-                let totalSkorSiswa = 0;
-                dataSoalUjian.forEach((soal, idx) => {
-                    const jawabanSiswa = (mapJawabanSiswa[idx] || '').toString().trim().toUpperCase();
-                    const kunciBenar = (soal.kunci_jawaban || '').toString().trim().toUpperCase();
-                    const bobot = parseFloat(soal.bobot_nilai || 0);
-
-                    if (jawabanSiswa === kunciBenar && kunciBenar !== "") {
-                        totalSkorSiswa += bobot;
-                    }
-                });
+                // Kirim status akhir "SELESAI" dan ambil nilai murni finalnya
+                const nilaiFinal = kirimKeSpreadsheetOtomatis("SELESAI");
 
                 const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
                 document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
                 
                 const displaySkor = document.getElementById("score-display");
-                displaySkor.innerText = totalSkorSiswa;
+                displaySkor.innerText = nilaiFinal;
                 displaySkor.className = "text-6xl font-black"; 
 
-                if (totalSkorSiswa < 70) displaySkor.classList.add("text-red-600");
-                else if (totalSkorSiswa <= 89) displaySkor.classList.add("text-blue-600");
-                else if (totalSkorSiswa <= 99) displaySkor.classList.add("text-amber-500");
-                else if (totalSkorSiswa === 100) displaySkor.classList.add("emas-menyala");
+                if (nilaiFinal < 70) displaySkor.classList.add("text-red-600");
+                else if (nilaiFinal <= 89) displaySkor.classList.add("text-blue-600");
+                else if (nilaiFinal <= 99) displaySkor.classList.add("text-amber-500");
+                else if (nilaiFinal === 100) displaySkor.classList.add("emas-menyala");
 
                 document.getElementById("success-modal").classList.remove("hidden");
+                
+                // Bersihkan sampah timer agar tidak mengganggu ujian berikutnya
+                localStorage.removeItem("asaj_timer_kls4");
+                localStorage.removeItem("asaj_answers_kls4");
             }
         }
 
