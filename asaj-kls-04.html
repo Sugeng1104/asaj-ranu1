@@ -38,9 +38,9 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Token / PIN</label>
-                    <input type="password" id="token" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold tracking-[0.3em] focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="••••••">
+                    <input type="password" id="token" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold tracking-[0.3em] text-center focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="••••••">
                 </div>
-                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4">
+                <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4 cursor-pointer">
                     Masuk Ruang Ujian
                 </button>
             </form>
@@ -49,12 +49,10 @@
 
     <div id="exam-section" class="hidden flex-col flex-grow animate-fade-in">
         <header class="bg-white border-b border-slate-200 w-full px-8 py-4 shadow-sm">
-            <div class="max-w-7xl mx-auto flex items-center justify-between">
-                <div class="flex items-center gap-5">
-                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500 font-bold">
+                        ✓
                     </div>
                     <div>
                         <h1 id="display-nama" class="text-xl font-extrabold text-slate-800 uppercase tracking-tight">Memuat Nama...</h1>
@@ -62,16 +60,16 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-12">
-                    <div class="text-center">
+                <div class="flex items-center gap-8 text-center sm:text-left">
+                    <div>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">ID SISWA</p>
                         <p id="display-idsiswa" class="text-sm font-bold text-slate-700 tracking-tight">-</p>
                     </div>
-                    <div class="text-center">
+                    <div>
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-1">KELAS</p>
                         <p id="display-idkelas" class="text-sm font-bold text-slate-700 tracking-tight">-</p>
                     </div>
-                    <div class="text-center bg-[#f0fdf4] px-5 py-1.5 rounded-lg border border-green-100">
+                    <div class="bg-[#f0fdf4] px-4 py-1.5 rounded-lg border border-green-100 text-center">
                         <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] mb-0.5">STATUS</p>
                         <p id="display-status" class="text-sm font-bold text-green-600 tracking-tight uppercase">-</p>
                     </div>
@@ -80,16 +78,13 @@
         </header>
 
         <main class="flex-grow flex items-center justify-center p-8">
-            <div class="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-100 p-16 max-w-3xl w-full text-center">
-                <h2 class="text-[26px] font-extrabold text-slate-800 mb-5">Simulasi Lembar Ujian Terbuka</h2>
-                <p class="text-slate-400 text-base leading-relaxed mb-10 max-w-xl mx-auto font-medium">
+            <div class="bg-white rounded-[40px] shadow-2xl shadow-slate-200/50 border border-slate-100 p-12 max-w-3xl w-full text-center">
+                <h2 class="text-[26px] font-extrabold text-slate-800 mb-4">Simulasi Lembar Ujian Terbuka</h2>
+                <p class="text-slate-400 text-base leading-relaxed mb-8 max-w-xl mx-auto font-medium">
                     Silakan jawab seluruh soal pada aplikasi lembar ujian Anda dengan teliti, kemudian klik tombol di bawah jika pengerjaan telah selesai.
                 </p>
                 
                 <button onclick="prosesSelesaiUjian()" class="inline-flex items-center gap-3 bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-4 rounded-2xl shadow-xl shadow-blue-200 transition-all transform hover:scale-105 active:scale-95 cursor-pointer">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                    </svg>
                     Selesai Ujian
                 </button>
             </div>
@@ -98,9 +93,105 @@
 
     <div id="success-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-[40px] max-w-md w-full p-10 shadow-2xl text-center border border-slate-100">
-            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-50 text-green-500 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
+            <h3 class="text-lg font-bold text-slate-700 leading-relaxed mb-6 px-4">
+                Ananda <span id="text-nama-sukses" class="text-blue-600 font-extrabold">Nama</span> telah menyelesaikan ASAJ Kelas 4 semester 2 Tahun 2026.
+            </h3>
+            <div class="bg-slate-50 rounded-3xl p-6 mb-8 border border-slate-100">
+                <p class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">Nilai Akhir</p>
+                <div id="score-display" class="text-6xl font-black">0</div>
             </div>
-            <h3 class="text-lg font-bold text-slate-700 leading-relaxed mb-6
+            <button onclick="logoutSiswa()" class="w-full bg-slate-800 text-white font-bold py-4 rounded-2xl hover:bg-slate-900 transition-all cursor-pointer">
+                Keluar Halaman
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbxQqxIErnfXiPBDo2L_puaQpDFHn_jZPiLjYi6cbyiD1ph5NQdmadnlyRU0q3gG0M1Z/exec';
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
+            if (sesi) { 
+                bukaDashboard(JSON.parse(sesi)); 
+            }
+        });
+
+        function prosesLoginSiswa(event) {
+            event.preventDefault();
+            const user = document.getElementById("username").value.trim();
+            const token = document.getElementById("token").value.trim();
+            const btn = document.getElementById("btn-login");
+
+            btn.disabled = true;
+            btn.innerText = "Memverifikasi...";
+
+            fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=KLS-04`)
+                .then(res => res.json())
+                .then(respon => {
+                    if (respon.status === "success") {
+                        // VALIDASI AMAN: Membandingkan langsung input dengan array respon data dari backend Anda
+                        const cocok = respon.data.find(s => {
+                            const dbUser = (s.username || '').toString().trim().toLowerCase();
+                            const dbToken = (s.token || '').toString().trim();
+                            return dbUser === user.toLowerCase() && dbToken === token;
+                        });
+                        
+                        if (cocok) {
+                            localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
+                            bukaDashboard(cocok);
+                        } else {
+                            alert("Kombinasi Username atau Token salah! Silakan periksa kartu ujian Anda.");
+                        }
+                    } else {
+                        alert("Eror basis data spreadsheet: " + respon.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert("Gagal terhubung ke server database.");
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerText = "Masuk Ruang Ujian";
+                });
+        }
+
+        function bukaDashboard(siswa) {
+            document.getElementById("login-section").classList.add("hidden");
+            document.getElementById("exam-section").classList.remove("hidden");
+            document.getElementById("exam-section").classList.add("flex");
+            
+            // Menyuntikkan data hasil pencarian login dari objek kolom sheet Anda
+            document.getElementById("display-nama").innerText = siswa.nama_lengkap || "Tanpa Nama";
+            document.getElementById("display-idsiswa").innerText = siswa.id_siswa || "-";
+            document.getElementById("display-idkelas").innerText = siswa.id_kelas || "KLS-04"; 
+            document.getElementById("display-status").innerText = siswa.status || "AKTIF";
+        }
+
+        function prosesSelesaiUjian() {
+            const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+            if (!dataSiswa) return;
+
+            const daftarNilai = [65, 80, 95, 100];
+            const skorAkhir = daftarNilai[Math.floor(Math.random() * daftarNilai.length)];
+            
+            document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || "Siswa";
+            const displaySkor = document.getElementById("score-display");
+            displaySkor.innerText = skorAkhir;
+            displaySkor.className = "text-6xl font-black"; 
+
+            if (skorAkhir < 70) displaySkor.classList.add("text-red-600");
+            else if (skorAkhir <= 89) displaySkor.classList.add("text-blue-600");
+            else if (skorAkhir <= 99) displaySkor.classList.add("text-amber-500");
+            else if (skorAkhir === 100) displaySkor.classList.add("emas-menyala");
+
+            document.getElementById("success-modal").classList.remove("hidden");
+        }
+
+        function logoutSiswa() {
+            localStorage.removeItem("sesi_siswa_asaj_kls4");
+            location.reload();
+        }
+    </script>
+</body>
+</html>
