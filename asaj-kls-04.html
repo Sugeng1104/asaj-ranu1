@@ -34,17 +34,13 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Pilih Mata Pelajaran</label>
-                    <select id="mata-pelajaran" desert required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer">
-                        <option value="" disabled selected>-- Pilih Mapel Ujian --</option>
-                        <option value="PANCASILA">Pancasila</option>
-                        <option value="BAHASA INDONESIA">Bahasa Indonesia</option>
-                        <option value="MATEMATIKA">Matematika</option>
+                    <select id="mata-pelajaran" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer text-slate-700">
+                        <option value="" disabled selected>-- PILIH MAPEL UJIAN --</option>
+                        <option value="PANCASILA">PANCASILA</option>
+                        <option value="BAHASA INDONESIA">BAHASA INDONESIA</option>
+                        <option value="MATEMATIKA">MATEMATIKA</option>
                         <option value="IPAS">IPAS</option>
-                        <option value="SENI RUPA">Seni Rupa</option>
-                        <option value="BAHASA DAERAH">Bahasa Daerah</option>
-                        <option value="BAHASA INGGRIS">Bahasa Inggris</option>
-                        <option value="PJOK">PJOK</option>
-                        <option value="PAI">PAI (Agama Islam)</option>
+                        <option value="BAHASA INGGRIS">BAHASA INGGRIS</option>
                     </select>
                 </div>
                 <div>
@@ -93,7 +89,7 @@
 
         <main class="max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start flex-grow">
             <div class="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-md relative min-h-[450px] flex flex-col justify-between">
-                <div id="loading-soal" class="text-center text-slate-400 font-medium my-auto py-12">Mengunduh butir soal dari database...</div>
+                <div id="loading-soal" class="text-center text-slate-400 font-medium my-auto py-12">Mengunduh paket berkas butir bank soal...</div>
                 
                 <div id="box-soal-inti" class="hidden w-full">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
@@ -185,7 +181,7 @@
             const mapelSaved = localStorage.getItem("asaj_mapel_kls4");
             
             if (sesi && mapelSaved) { 
-                mapelPilihanSiswa = mapelSaved;
+                mapelPilihanSiswa = mapelSaved.toString().toUpperCase().trim();
                 const waktuLokal = localStorage.getItem("asaj_timer_kls4");
                 if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
                 
@@ -222,9 +218,9 @@
                         });
                         
                         if (cocok) {
-                            mapelPilihanSiswa = mapel;
+                            mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
                             localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
-                            localStorage.setItem("asaj_mapel_kls4", mapel);
+                            localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
                             bukaHalamanUjian(cocok);
                         } else {
                             alert("Kombinasi Username atau Token salah!");
@@ -271,27 +267,19 @@
         }
 
         function muatMasterSoal() {
-            // Menggunakan action=ambilMasterSoal sesuai dengan setup database Anda
-            fetch(`${API_URL}?action=ambilMasterSoal&id_kelas=KLS-04`)
+            // Mengubah format target pencarian ke Master_PANCASILA, Master_MATEMATIKA, dll.
+            const namaSheetTarget = "Master_" + mapelPilihanSiswa;
+
+            // Memanggil langsung tab sheet mapel yang dipilih agar terhindar dari eror penundaan
+            fetch(`${API_URL}?action=${namaSheetTarget}&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
                         
-                        // Filter agar hanya memuat nomor soal milik mata pelajaran yang dipilih saat login
-                        const soalTerfilter = respon.data.filter(item => {
-                            const itemMapel = (item.mata_pelajaran || item.MATA_PELAJARAN || "").toString().toUpperCase().trim();
-                            return itemMapel === mapelPilihanSiswa.toUpperCase().trim();
-                        });
-
-                        if(soalTerfilter.length === 0) {
-                            document.getElementById("loading-soal").innerText = `Tidak ada bank soal untuk Mata Pelajaran ${mapelPilihanSiswa} di Kelas ini.`;
-                            return;
-                        }
-
-                        dataSoalUjian = soalTerfilter.map(item => {
+                        dataSoalUjian = respon.data.map(item => {
                             return {
                                 nomor_soal: item.nomor_soal || item.NOMOR_SOAL || 1,
-                                mata_pelajaran: item.mata_pelajaran || item.MATA_PELAJARAN || "UMUM",
+                                mata_pelajaran: mapelPilihanSiswa,
                                 jenis_soal: (item.jenis_soal || item.JENIS_SOAL || "PILIHAN GANDA").toString().toUpperCase().trim(),
                                 pertanyaan: item.pertanyaan || item.PERTANYAAN || "",
                                 pilihan_a: item.pilihan_a || item.PILIHAN_A || "",
@@ -311,11 +299,11 @@
                         renderGridNomor();
                         tampilkanSoalSpesifik(indexSoalAktif);
                     } else {
-                        document.getElementById("loading-soal").innerText = "Tidak ada bank soal untuk kelas ini di Master_Soal.";
+                        document.getElementById("loading-soal").innerText = `Tidak ada butir soal di dalam sheet ${namaSheetTarget}.`;
                     }
                 })
                 .catch(() => {
-                    document.getElementById("loading-soal").innerHTML = `<div class="text-red-500 font-bold">Gagal memuat butir soal. Hubungi Proktor.</div>`;
+                    document.getElementById("loading-soal").innerHTML = `<div class="text-red-500 font-bold">Gagal mengunduh berkas soal dari sheet ${namaSheetTarget}. Periksa nama tab sheet Anda.</div>`;
                 });
         }
 
@@ -327,7 +315,7 @@
                 const btnNo = document.createElement("button");
                 btnNo.type = "button";
                 btnNo.id = `btn-no-${idx}`;
-                btnNo.innerText = idx + 1; // Menampilkan urutan 1, 2, 3 murni berdasarkan jumlah soal terfilter
+                btnNo.innerText = idx + 1; 
                 btnNo.className = "py-3 text-sm font-bold rounded-xl border text-center transition-all cursor-pointer";
                 updateWarnaNomorSatuPerSatu(idx, btnNo);
                 btnNo.onclick = () => tampilkanSoalSpesifik(idx);
@@ -443,7 +431,7 @@
                 const key = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
                 const bobot = parseFloat(soal.bobot_nilai || 0);
 
-                barisJawaban.push(`${soal.nomor_soal}:${ans === "" ? "-" : ans}`);
+                barisJawaban.push(`${idx + 1}:${ans === "" ? "-" : ans}`);
 
                 if (ans === key && key !== "") {
                     totalSkorSiswa += bobot;
