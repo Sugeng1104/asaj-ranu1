@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aplikasi Ujian Sekolah ASAJ</title>
+    <title>Aplikasi Ujian Sekolah ASAJ - Kelas 4</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -27,21 +27,11 @@
                     <i class="fa-solid fa-graduation-cap"></i>
                 </div>
                 <h2 class="text-3xl font-extrabold text-slate-900">Ujian Digital ASAJ</h2>
-                <p class="mt-2 text-sm text-slate-600">Silakan lengkapi data login untuk memulai ujian</p>
+                <p class="mt-2 text-sm text-slate-600">Khusus Kelas 4 — Silakan lengkapi data untuk memulai ujian</p>
             </div>
             
             <form class="mt-8 space-y-5" onsubmit="event.preventDefault(); prosesLoginSiswa();">
-                <div>
-                    <label for="select-kelas" class="block text-sm font-medium text-slate-700 mb-1">Pilih Kelas</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
-                            <i class="fa-solid fa-school"></i>
-                        </span>
-                        <select id="select-kelas" class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm appearance-none cursor-pointer">
-                            <option value="">-- Memuat Daftar Kelas... --</option>
-                        </select>
-                    </div>
-                </div>
+                <input type="hidden" id="select-kelas" value="kls-04">
 
                 <div>
                     <label for="select-mapel" class="block text-sm font-medium text-slate-700 mb-1">Mata Pelajaran</label>
@@ -131,8 +121,7 @@
                         Memuat butir teks soal ujian...
                     </div>
 
-                    <div id="container-pilihan" class="space-y-3">
-                        </div>
+                    <div id="container-pilihan" class="space-y-3"></div>
                 </div>
 
                 <div class="flex justify-between items-center">
@@ -148,8 +137,7 @@
             <section class="bg-white p-5 rounded-2xl shadow-xs border border-slate-200 h-fit sticky top-20">
                 <h3 class="font-bold text-slate-900 text-sm mb-3 pb-2 border-b border-slate-100">💻 Lembar Navigasi Soal</h3>
                 
-                <div id="grid-nomor" class="grid grid-cols-5 gap-2 max-h-72 overflow-y-auto pr-1">
-                    </div>
+                <div id="grid-nomor" class="grid grid-cols-5 gap-2 max-h-72 overflow-y-auto pr-1"></div>
 
                 <div class="mt-5 pt-3 border-t border-slate-100 text-[11px] text-slate-500 space-y-1.5">
                     <div class="flex items-center gap-2"><span class="w-3 h-3 bg-indigo-600 rounded-sm inline-block"></span> Posisi Aktif</div>
@@ -168,47 +156,22 @@
         let stateUjian = {
             idSiswa: "",
             namaLengkap: "",
-            idKelas: "",
+            idKelas: "kls-04", // Default langsung dikunci ke kls-04
             mapel: "",
             daftarSoal: [],
-            jawabanSiswa: {}, // Format -> id_soal: "A"
+            jawabanSiswa: {}, 
             indeksAktif: 0,
-            durasiMenit: 90, // Atur default waktu pengerjaan (90 Menit)
+            durasiMenit: 90, 
             sisaWaktuDetik: 0,
             timerInterval: null
         };
 
-        // Ambil Data Kelas Saat Aplikasi Pertama Kali Dibuka
+        // Inisialisasi Fitur Pengaman Saat Aplikasi Dibuka
         document.addEventListener("DOMContentLoaded", function() {
-            ambilDaftarKelas();
             proteksiKecurangan();
         });
 
-        // 1. Fungsi Mengambil Daftar Kelas dari Spreadsheet (GET)
-        function ambilDaftarKelas() {
-            fetch(`${URL_BACKEND}?action=ambilKelas`)
-            .then(res => res.json())
-            .then(respon => {
-                const selectBox = document.getElementById("select-kelas");
-                selectBox.innerHTML = '<option value="">-- Pilih Kelas Anda --</option>';
-                if(respon.status === "success" && respon.data.length > 0) {
-                    respon.data.forEach(kelas => {
-                        let opt = document.createElement("option");
-                        opt.value = kelas.id;
-                        opt.textContent = kelas.nama;
-                        selectBox.appendChild(opt);
-                    });
-                } else {
-                    selectBox.innerHTML = '<option value="">Gagal memuat kelas / Data kosong</option>';
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("Gagal menghubungi server database kelas.");
-            });
-        }
-
-        // 2. Handler Utama: Validasi Login, Saklar Mapel Aktif & Verifikasi Akun
+        // 1. Handler Utama: Validasi Login, Saklar Mapel Aktif & Verifikasi Akun
         async function prosesLoginSiswa() {
             const btnLogin = document.getElementById("btn-login");
             const selectKelas = document.getElementById("select-kelas").value;
@@ -288,7 +251,7 @@
             btn.innerHTML = '<i class="fa-solid fa-right-to-bracket mr-2 mt-0.5"></i> Masuk & Kerjakan Ujian';
         }
 
-        // 3. Mengambil Bank Soal Berdasarkan Mapel Terpilih (POST - Amankan CORS)
+        // 2. Mengambil Bank Soal Berdasarkan Mapel Terpilih (POST)
         async function dapatkanBankSoalUjian() {
             try {
                 const respon = await fetch(URL_BACKEND, {
@@ -302,9 +265,6 @@
                 const hasil = await respon.json();
 
                 if (hasil.status === "success" && hasil.data.length > 0) {
-                    // Opsional: Jika ingin diacak urutan soalnya, hilangkan tanda komentar baris di bawah ini
-                    // hasil.data.sort(() => Math.random() - 0.5);
-                    
                     stateUjian.daftarSoal = hasil.data;
                     
                     // Aktifkan Tampilan Layar Ujian & Mulai Hitung Mundur
@@ -334,17 +294,15 @@
             }
         }
 
-        // 4. Proses Render Pertanyaan & Pilihan Opsi ke Layar Monitor Murid
+        // 3. Proses Render Pertanyaan & Pilihan Opsi ke Layar
         function renderButirSoal() {
             if (stateUjian.daftarSoal.length === 0) return;
             
             const soal = stateUjian.daftarSoal[stateUjian.indeksAktif];
             
-            // Atur Label Atas
             document.getElementById("label-nomor-soal").textContent = `SOAL NOMOR ${stateUjian.indeksAktif + 1} DARI ${stateUjian.daftarSoal.length}`;
             document.getElementById("label-bobot-soal").textContent = `Bobot Nilai: ${soal.bobot_nilai || 1}`;
             
-            // Set Gambar Jikalau Tersemat
             const boxGambar = document.getElementById("box-gambar-soal");
             const imgEl = document.getElementById("img-soal");
             if (soal.gambar && soal.gambar.toString().trim() !== "") {
@@ -357,15 +315,13 @@
                 imgEl.src = "";
             }
 
-            // Set Isi Pertanyaan
             document.getElementById("txt-pertanyaan").innerHTML = soal.pertanyaan;
 
-            // Render Pilihan Ganda (A, B, C, D)
             const containerPilihan = document.getElementById("container-pilihan");
             containerPilihan.innerHTML = "";
 
             const opsiHuruf = ["A", "B", "C", "D"];
-            opsiHuruf.forEach(huruf => {
+            opshiHuruf.forEach(huruf => {
                 const kolomKunci = `pilihan_${huruf.toLowerCase()}`;
                 const teksOpsi = soal[kolomKunci];
 
@@ -386,26 +342,21 @@
                 }
             });
 
-            // Atur Keaktifan Tombol Next / Prev
             document.getElementById("btn-prev").disabled = (stateUjian.indeksAktif === 0);
             document.getElementById("btn-next").innerHTML = (stateUjian.indeksAktif === stateUjian.daftarSoal.length - 1) 
                 ? '<i class="fa-solid fa-check-double mr-1"></i> Selesai' 
                 : 'Soal Berikutnya <i class="fa-solid fa-arrow-right ml-2"></i>';
         }
 
-        // 5. Simpan Jawaban Secara Lokal + Trigger Autosave Cloud Real-time (POST)
+        // 4. Simpan Jawaban Secara Lokal + Autosave Cloud Real-time (POST)
         function simpanPilihanJawaban(idSoal, hurufDipilih) {
             stateUjian.jawabanSiswa[idSoal] = hurufDipilih;
-            
-            // Refresh Komponen Tampilan Soal & Kotak Navigasi
             renderButirSoal();
             buatKotakNavigasiNomor();
-
-            // Jalankan Fitur AUTOSAVE Latar Belakang (Anti-Listrik Padam / Force Close)
             cadangkanJawabanKeCloud("MENGERJAKAN");
         }
 
-        // 6. Membuat Kotak Samping Kisi-Kisi Nomor Lembar Ujian
+        // 5. Membuat Kotak Samping Kisi-Kisi Nomor Lembar Ujian
         function buatKotakNavigasiNomor() {
             const gridContainer = document.getElementById("grid-nomor");
             gridContainer.innerHTML = "";
@@ -422,7 +373,6 @@
                     buatKotakNavigasiNomor();
                 };
 
-                // Styling Dinamis Atribut Kotak Nomor
                 if (isAktif) {
                     btnNo.className = "py-2.5 rounded-lg text-xs font-extrabold text-white bg-indigo-600 shadow-sm border border-indigo-600 cursor-pointer";
                 } else if (isTerjawab) {
@@ -435,12 +385,11 @@
             });
         }
 
-        // 7. Pengendali Tombol Arah Navigasi Soal
+        // 6. Pengendali Tombol Arah Navigasi Soal
         function navigasiSoal(arah) {
             const targetIndeks = stateUjian.indeksAktif + arah;
             
             if (arah === 1 && stateUjian.indeksAktif === stateUjian.daftarSoal.length - 1) {
-                // Jika klik 'Selesai' di nomor terakhir
                 konfirmasiSelesaiUjian();
                 return;
             }
@@ -452,7 +401,7 @@
             }
         }
 
-        // 8. Hitung Mundur Jam Digital Ujian
+        // 7. Hitung Mundur Jam Digital Ujian
         function mulaiHitungMundurWaktu() {
             stateUjian.timerInterval = setInterval(() => {
                 if (stateUjian.sisaWaktuDetik <= 0) {
@@ -462,7 +411,6 @@
                 } else {
                     stateUjian.sisaWaktuDetik--;
                     
-                    // Format output jam:menit:detik
                     const h = Math.floor(stateUjian.sisaWaktuDetik / 3600).toString().padStart(2, '0');
                     const m = Math.floor((stateUjian.sisaWaktuDetik % 3600) / 60).toString().padStart(2, '0');
                     const s = (stateUjian.sisaWaktuDetik % 60).toString().padStart(2, '0');
@@ -472,9 +420,8 @@
             }, 1000);
         }
 
-        // 9. Sinkronisasi Data / Mengirim Payload ke Cloud (POST Aksi 6)
+        // 8. Sinkronisasi Data / Mengirim Payload ke Cloud (POST)
         function cadangkanJawabanKeCloud(statusUjian) {
-            // Hitung kalkulasi skor sementara (Kunci dicocokkan otomatis di memori)
             let totalBobotBenar = 0;
             stateUjian.daftarSoal.forEach(soal => {
                 const jawab = stateUjian.jawabanSiswa[soal.id_soal];
@@ -484,14 +431,11 @@
                 }
             });
 
-            // Hitung nilai akhir dalam rentang standar 100%
             let nilaiMaksimum = stateUjian.daftarSoal.reduce((sum, s) => sum + parseFloat(s.bobot_nilai || 1), 0);
             let nilaiAkhir = nilaiMaksimum > 0 ? ((totalBobotBenar / nilaiMaksimum) * 100).toFixed(2) : 0;
 
-            // Susun string rekapitulasi jawaban (Contoh: "SQL1:A, SQL2:B")
             let stringJawaban = Object.entries(stateUjian.jawabanSiswa).map(([id, hrf]) => `${id}:${hrf}`).join(", ");
 
-            // Kirim via Fetch API POST (Bebas Batasan Kuota URL GET)
             fetch(URL_BACKEND, {
                 method: "POST",
                 body: JSON.stringify({
@@ -502,7 +446,7 @@
                     mata_pelajaran: stateUjian.mapel,
                     daftar_jawaban: stringJawaban || "Belum Menjawab",
                     nilai_akhir: nilaiAkhir,
-                    status_ujian: statusUjian // "MENGERJAKAN" atau "SELESAI"
+                    status_ujian: statusUjian
                 })
             })
             .then(res => res.json())
@@ -514,7 +458,7 @@
             .catch(e => console.error("Gagal melakukan autosave:", e));
         }
 
-        // 10. Pengakhiran Sesi Ujian Manual dengan Konfirmasi
+        // 9. Pengakhiran Sesi Ujian Manual dengan Konfirmasi
         function konfirmasiSelesaiUjian() {
             const totalSoal = stateUjian.daftarSoal.length;
             const terjawab = Object.keys(stateUjian.jawabanSiswa).length;
@@ -533,10 +477,8 @@
         }
 
         function kumpulkanJawabanFinalOtomatis() {
-            // Ubah Status ke Selesai
             cadangkanJawabanKeCloud("SELESAI");
             
-            // Hapus Struktur Dokumen Layar, Ganti Notifikasi Sukses
             document.body.innerHTML = `
                 <div class="min-h-screen flex items-center justify-center p-4 bg-slate-100">
                     <div class="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center border border-slate-200">
@@ -552,7 +494,6 @@
                 </div>
             `;
             
-            // Keluar dari mode fullscreen otomatis
             if (document.exitFullscreen) { document.exitFullscreen(); }
         }
 
@@ -560,10 +501,8 @@
         // FITUR PENGAMAN EKSTRA (ANTI-CHEATING SYSTEM)
         // =========================================================================
         function proteksiKecurangan() {
-            // 1. Blok Klik Kanan Konten
             document.addEventListener('contextmenu', e => e.preventDefault());
 
-            // 2. Blok Pintasan Salin / Tempel / Cari Konten (Ctrl+C, Ctrl+V, Ctrl+U, F12)
             document.addEventListener('keydown', e => {
                 if (e.ctrlKey && (e.key === 'c' || e.key === 'v' || e.key === 'u' || e.key === 's' || e.key === 'p')) {
                     e.preventDefault();
@@ -574,11 +513,9 @@
                 }
             });
 
-            // 3. Deteksi Blur Window (Siswa Membuka Tab Baru / Keluar Jendela Browser)
             window.addEventListener('blur', () => {
                 if (stateUjian.idSiswa !== "") {
                     console.warn("Peringatan: Terdeteksi perpindahan tab halaman browser!");
-                    // Anda bisa menambahkan penghitung pelanggaran (Pelanggaran++) jika diperlukan
                 }
             });
         }
