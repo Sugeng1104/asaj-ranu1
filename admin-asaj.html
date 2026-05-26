@@ -335,6 +335,7 @@
     let kelasAktifGlobal = {};
     let mentahSemuaSoal = []; 
     let mapelTerpilihAktif = ""; 
+    let dataSoalMassalTerbaca = [];
 
     function bukaPopupKelas() {
       document.getElementById('popupPilihKelas').classList.remove('hidden');
@@ -494,10 +495,13 @@
       e.preventDefault();
       document.getElementById('loader-halaman').classList.remove('hidden');
       
-      // FIX BENAHI STRUKTUR PAYLOAD MANUAL SESUAI URUTAN REKUES
+      const mapel = document.getElementById('soalMapel').value;
+      // REVISI DETEKSI TARGET SHEET UNTUK PANCASILA
+      const targetSheet = (mapel === 'PANCASILA') ? 'Master_Pancasila' : '';
+
       const payload = {
-            id_soal: "", // Di-generate otomatis oleh backend Apps Script
-            mata_pelajaran: document.getElementById('soalMapel').value,
+            id_soal: "", 
+            mata_pelajaran: mapel,
             id_kelas: kelasAktifGlobal.id,
             jenis_soal: document.getElementById('soalJenis').value,
             pertanyaan: document.getElementById('soalPertanyaan').value,
@@ -511,9 +515,16 @@
             nomor_soal: Number(document.getElementById('soalNomor').value)
       };
       
-      fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'tambahSoalTunggal', data_soal: payload }) })
-        .then(r => r.json()).then(res => { alert(res.message); document.getElementById('formSoalTunggal').reset(); aturFormPilihan(); muatBankSoal(); })
-        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+      fetch(API_URL, { 
+         method: 'POST', 
+         body: JSON.stringify({ 
+             action: 'tambahSoalTunggal', 
+             data_soal: payload,
+             target_sheet: targetSheet 
+         }) 
+      })
+      .then(r => r.json()).then(res => { alert(res.message); document.getElementById('formSoalTunggal').reset(); aturFormPilihan(); muatBankSoal(); })
+      .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
     function bacaExcelSoal() {
@@ -528,7 +539,6 @@
                 const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('pertanyaan')) return alert("Format excel salah atau kolom 'pertanyaan' tidak ditemukan!");
                 
-                // BENAHI STRUKTUR MAP DATA MASSAL EXCEL KE FORMAT YANG BENAR
                 dataSoalMassalTerbaca = sheetJson.map(soal => {
                     return {
                         id_soal: soal.id_soal || "",
@@ -561,9 +571,21 @@
     function kirimSoalMassal() {
         if(!confirm("Kirim bank soal?")) return;
         document.getElementById('loader-halaman').classList.remove('hidden');
+
+        // REVISI DETEKSI TARGET SHEET MASSAL JIKA MAPELNYA PANCASILA
+        let targetSheet = "";
+        if (dataSoalMassalTerbaca.length > 0 && dataSoalMassalTerbaca[0].mata_pelajaran === 'PANCASILA') {
+            targetSheet = "Master_Pancasila";
+        }
+
         fetch(API_URL, {
             method: 'POST',
-            body: JSON.stringify({ action: 'simpanSoalMassal', id_kelas: kelasAktifGlobal.id, data_soal: dataSoalMassalTerbaca })
+            body: JSON.stringify({ 
+                action: 'simpanSoalMassal', 
+                id_kelas: kelasAktifGlobal.id, 
+                data_soal: dataSoalMassalTerbaca,
+                target_sheet: targetSheet
+            })
         })
         .then(r => r.json()).then(res => { alert(res.message); document.getElementById('excelSoalInput').value = ""; muatBankSoal(); })
         .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
@@ -579,19 +601,21 @@
 
         tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Memuat data bank soal ${mapelTerpilihAktif}...</td></tr>`;
         
-        fetch(`${API_URL}?action=ambilBankSoal&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+        // JIKA MAPEL AKTIF ADALAH PANCASILA, BERIKAN PARAMETER SPREADSHEET TARGET KE API GET
+        const targetSheetParam = (mapelTerpilihAktif === 'PANCASILA') ? '&target_sheet=Master_Pancasila' : '';
+
+        fetch(`${API_URL}?action=ambilBankSoal&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}${targetSheetParam}`)
         .then(r => r.json())
         .then(res => {
             if(res.status === 'success' && res.data.length > 0) {
                 mentahSemuaSoal = res.data;
                 
-                // FILTER DATA SOAL BERDASARKAN MAPEL YANG AKTIF
                 const dataSoalTerfilter = mentahSemuaSoal.filter(s => {
                     const mapelSoal = (s.mata_pelajaran || "").toString().trim().toUpperCase();
                     return mapelSoal === mapelTerpilihAktif.toUpperCase();
                 });
 
-                // URUTKAN TAMPILAN BERDASARKAN NOMOR SOAL
+                // REVISI OTOMATIS URUT DARI NOMOR 1 (ASCENDING)
                 dataSoalTerfilter.sort((a, b) => Number(a.nomor_soal || 0) - Number(b.nomor_soal || 0));
 
                 if (dataSoalTerfilter.length === 0) {
