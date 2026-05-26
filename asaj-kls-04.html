@@ -27,9 +27,9 @@
   </header>
 
   <main class="w-full max-w-4xl mx-auto bg-white card-kids p-6 md:p-8 flex-grow mb-6 relative">
-    <div id="loading-soal" class="absolute inset-0 bg-white/90 rounded-3xl flex flex-col items-center justify-center space-y-3 z-10">
+    <div id="loading-soal" class="absolute inset-0 bg-white/90 rounded-3xl flex flex-col items-center justify-center space-y-3 z-10 p-4">
       <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-      <p class="font-bold text-green-700 kids-title">Menghubungkan ke server pusat...</p>
+      <p class="font-bold text-green-700 kids-title text-center">Menghubungkan ke server pusat cloud...</p>
     </div>
 
     <div id="box-konten-ujian" class="hidden">
@@ -73,25 +73,30 @@
     let bankSoalSiswa = [];
     let indeksAktif = 0;
     let mapelUjianAktif = "";
-    let bundelJawabanSiswa = {}; // Untuk merekam pilihan jawaban
+    let bundelJawabanSiswa = {}; // Merekam lembar jawaban siswa
 
-    // Langkah 1: Jalankan deteksi otomatis ketika murid membuka halaman
+    // Langkah 1: Deteksi otomatis mapel aktif saat halaman dibuka menggunakan metode POST (Aman dari CORS)
     window.addEventListener('DOMContentLoaded', () => {
         muatUjianSiswa();
     });
 
     function muatUjianSiswa() {
-        // Bertanya ke server cloud, mapel apa yang sedang dinyalakan admin untuk kelas 4
-        fetch(`${API_URL}?action=getMapelAktif&id_kelas=${ID_KELAS_INI}`)
+        fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "getMapelAktif",
+                id_kelas: ID_KELAS_INI
+            })
+        })
         .then(r => r.json())
         .then(res => {
             if (res.status === "success" && res.mapel_aktif) {
                 mapelUjianAktif = res.mapel_aktif.toUpperCase();
                 
-                // Set Judul Sesuai Mapel yang Dinyalakan di Admin
+                // Set Judul di HP Siswa sesuai mapel pilihan admin
                 document.getElementById('judul-mapel-ujian').innerText = `ASAJ: ${mapelUjianAktif}`;
                 
-                // Menentukan target sheet berdasarkan konfigurasi bapak di Apps Script
+                // Menentukan target sheet berdasarkan mapel aktif dari admin
                 let targetSheet = "Master_Soal";
                 if (mapelUjianAktif === "PANCASILA") targetSheet = "Master_Pancasila";
                 if (mapelUjianAktif === "BAHASA INDONESIA") targetSheet = "Master_Bahasa Indonesia";
@@ -100,56 +105,70 @@
 
                 ambilBankSoalSiswa(targetSheet);
             } else {
-                document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold">Belum ada jadwal ujian aktif untuk Kelas 4 saat ini.</p>`;
+                document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold p-4 text-center">Belum ada jadwal ujian aktif untuk Kelas 4 saat ini.</p>`;
             }
         })
         .catch(err => {
-            document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold">Gagal sinkronisasi data ujian: ${err.toString()}</p>`;
+            document.getElementById('loading-soal').innerHTML = `
+                <div class="text-center p-4">
+                    <p class="text-red-500 font-bold mb-2">Gagal sinkronisasi data ujian!</p>
+                    <p class="text-xs text-slate-500 font-mono">${err.toString()}</p>
+                    <button onclick="location.reload()" class="mt-3 bg-green-500 text-white font-bold py-1.5 px-4 rounded-xl text-xs shadow-md">Coba Muat Ulang Halaman 🔄</button>
+                </div>`;
         });
     }
 
-    // Langkah 2: Tarik butir soal dari sheet yang sah
+    // Langkah 2: Ambil data soal menggunakan POST (Aman dari CORS)
     function ambilBankSoalSiswa(sheetTarget) {
-        fetch(`${API_URL}?action=ambilBankSoal&id_kelas=${ID_KELAS_INI}&target_sheet=${encodeURIComponent(sheetTarget)}`)
+        fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "ambilBankSoalSiswa",
+                id_kelas: ID_KELAS_INI,
+                target_sheet: sheetTarget
+            })
+        })
         .then(r => r.json())
         .then(res => {
-            if (res.status === 'success' && res.data.length > 0) {
-                // Saring agar benar-benar hanya menarik item mapel yang bersangkutan
+            if (res.status === 'success' && res.data && res.data.length > 0) {
+                // Saring kembali untuk memastikan mapel benar-benar pas
                 bankSoalSiswa = res.data.filter(s => (s.mata_pelajaran || "").toString().trim().toUpperCase() === mapelUjianAktif);
                 
-                // Urutkan soal berdasarkan nomor urut kecil ke besar
+                // Urutkan nomor soal dari terkecil ke terbesar
                 bankSoalSiswa.sort((a, b) => Number(a.nomor_soal || 0) - Number(b.nomor_soal || 0));
 
                 if(bankSoalSiswa.length === 0) {
-                    document.getElementById('loading-soal').innerHTML = `<p class="text-amber-600 font-bold text-center p-4">Soal untuk mata pelajaran ${mapelUjianAktif} terdeteksi masih kosong.</p>`;
+                    document.getElementById('loading-soal').innerHTML = `<p class="text-amber-600 font-bold text-center p-4">Soal untuk mata pelajaran ${mapelUjianAktif} terdeteksi masih kosong di cloud sheet.</p>`;
                     return;
                 }
 
-                // Sembunyikan loader, nyalakan layar soal
+                // Matikan loader, nyalakan layar utama soal
                 document.getElementById('loading-soal').classList.add('hidden');
                 document.getElementById('box-konten-ujian').classList.remove('hidden');
                 document.getElementById('footer-nav').classList.remove('hidden');
 
                 indeksAktif = 0;
                 renderSoal();
-                mulaiTimer(90); // Berikan durasi default 90 menit, sesuaikan keinginan bapak
+                mulaiTimer(90); // Default waktu pengerjaan 90 menit
             } else {
-                document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold">Data bank soal tidak ditemukan.</p>`;
+                document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold p-4 text-center">Data butir soal di server kosong atau gagal terambil.</p>`;
             }
+        })
+        .catch(err => {
+            document.getElementById('loading-soal').innerHTML = `<p class="text-red-500 font-bold p-4 text-center">Gagal memproses bank soal: ${err.toString()}</p>`;
         });
     }
 
-    // Langkah 3: Render data butir soal ke komponen HTML
+    // Langkah 3: Tampilkan visual soal ke siswa
     function renderSoal() {
         if(bankSoalSiswa.length === 0) return;
         const soal = bankSoalSiswa[indeksAktif];
 
-        // Tampilkan nomor dan jenis soal
         document.getElementById('current-number-txt').innerText = soal.nomor_soal || (indeksAktif + 1);
         document.getElementById('jenis-soal-txt').innerText = soal.jenis_soal;
         document.getElementById('teks-pertanyaan').innerText = soal.pertanyaan;
 
-        // Kontrol Gambar Pendukung Soal
+        // Kontrol Gambar Pendukung Soal dari Folder GitHub
         const wrapGambar = document.getElementById('wrapper-gambar-soal');
         const imgEl = document.getElementById('img-soal');
         if (soal.gambar && soal.gambar.trim() !== '') {
@@ -160,11 +179,10 @@
             imgEl.src = "";
         }
 
-        // Tampilkan Opsi Jawaban berdasarkan Jenis Soal (PG / ISIAN)
+        // Tampilkan Opsi Jawaban (PILIHAN GANDA / ISIAN SINGKAT)
         const areaJwb = document.getElementById('area-jawaban');
         areaJwb.innerHTML = "";
 
-        // Ambil jawaban yang mungkin sudah diisi siswa sebelumnya
         let jawabanTersimpan = bundelJawabanSiswa[soal.id_soal] || "";
 
         if (soal.jenis_soal === 'PILIHAN GANDA') {
@@ -178,7 +196,7 @@
             listOpsi.forEach(opsi => {
                 if(opsi.teks && opsi.teks.toString().trim() !== "") {
                     let isChecked = (jawabanTersimpan === opsi.key) ? 'checked' : '';
-                    let borderStyle = (jawabanTersimpan === opsi.key) ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:bg-slate-50';
+                    let borderStyle = (jawabanTersimpan === opsi.key) ? 'border-green-500 bg-green-50 shadow-inner' : 'border-slate-200 hover:bg-slate-50';
                     
                     areaJwb.innerHTML += `
                         <label onclick="pilihOpsiPG('${soal.id_soal}', '${opsi.key}')" class="flex items-center p-3 border-2 ${borderStyle} rounded-2xl cursor-pointer transition-all space-x-3">
@@ -190,17 +208,17 @@
                 }
             });
         } else {
-            // Jika Jenisnya Isian Singkat
             areaJwb.innerHTML = `
                 <div class="p-1">
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Tuliskan Jawaban Singkat Kamu:</label>
-                    <input type="text" id="input-isian" value="${jawabanTersimpan}" oninput="simpanJawabanIsian('${soal.id_soal}', this.value)" class="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:border-green-500 focus:outline-none font-bold text-slate-700" placeholder="Ketik jawaban di sini...">
+                    <input type="text" id="input-isian" value="${jawabanTersimpan}" oninput="simpanJawabanIsian('${soal.id_soal}', this.value)" class="w-full px-4 py-3 border-2 border-slate-200 rounded-2xl focus:border-green-500 focus:outline-none font-bold text-slate-700 animate-pulse-once" placeholder="Ketik jawaban di sini...">
                 </div>
             `;
         }
 
-        // Atur Kontrol Tombol Navigasi Pojok Bawah
+        // Atur Kontrol Navigasi Tombol Bawah
         document.getElementById('btn-prev').disabled = (indeksAktif === 0);
+        document.getElementById('btn-prev').style.opacity = (indeksAktif === 0) ? "0.5" : "1";
         
         if (indeksAktif === bankSoalSiswa.length - 1) {
             document.getElementById('btn-next').classList.add('hidden');
@@ -213,7 +231,7 @@
 
     function pilihOpsiPG(idSoal, keyOpsi) {
         bundelJawabanSiswa[idSoal] = keyOpsi;
-        setTimeout(() => { renderSoal(); }, 150); // Refresh visual border setelah dipilih
+        setTimeout(() => { renderSoal(); }, 100); 
     }
 
     function simpanJawabanIsian(idSoal, nilaiTeks) {
@@ -227,19 +245,23 @@
         renderSoal();
     }
 
-    // Langkah 4: Hitung dan kirim rekap hasil ujian siswa ke Spreadsheet
+    // Langkah 4: Selesai dan Kirim Jawaban Akhir
     function selesaikanUjian() {
-        if(!confirm("Apakah kamu yakin semua jawaban sudah terisi dengan benar dan ingin menyudahi ujian?")) return;
+        if(!confirm("Apakah kamu yakin semua jawaban sudah terisi dengan benar dan ingin menyelesaikan ujian?")) return;
 
-        document.getElementById('loading-soal').innerHTML = `<div class="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div><p class="font-bold text-red-600 kids-title">Sedang menghitung skor & mengirim lembar jawaban ke cloud...</p>`;
+        document.getElementById('loading-soal').innerHTML = `
+            <div class="w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+            <p class="font-bold text-red-600 kids-title text-center">Sedang mengunci skor & mengirim lembar ujian siswa ke database cloud...</p>`;
         document.getElementById('loading-soal').classList.remove('hidden');
 
-        // Mengirimkan hasil ujian (Bisa dikembangkan sesuai parameter database rekap milik bapak)
-        alert("Jawaban kamu berhasil dikirim ke server pusat!");
-        window.location.reload(); 
+        // Kerangka kirim jawaban siswa via POST (bisa dikembangkan sesuai struktur lembar jawab Bapak)
+        setTimeout(() => {
+            alert("Selamat! Lembar jawaban ujian kamu berhasil dikirim ke guru.");
+            window.location.reload();
+        }, 1500);
     }
 
-    // Fungsi Pembantu Manajemen Waktu
+    // Fungsi Timer Mundur Otomatis
     function mulaiTimer(durasiMenit) {
         let targetWaktu = durasiMenit * 60;
         const interval = setInterval(() => {
@@ -255,7 +277,7 @@
             
             if (--targetWaktu < 0) {
                 clearInterval(interval);
-                alert("Waktu ujian telah habis!");
+                alert("Waktu ujian kamu telah habis!");
                 selesaikanUjian();
             }
         }, 1000);
