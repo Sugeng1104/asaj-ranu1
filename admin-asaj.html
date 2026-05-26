@@ -345,6 +345,31 @@
     let kelasAktifGlobal = {};
     let targetUploadGambar = { idSoal: '', sheetName: '' };
 
+    // --- STRATEGI PERSISTENSI REFRESH (LOCALSTORAGE) ---
+    window.addEventListener('DOMContentLoaded', () => {
+        const sesiSImpanan = localStorage.getItem('asaj_admin_session');
+        if (sesiSImpanan) {
+            try {
+                const dataSesi = JSON.parse(sesiSImpanan);
+                kelasAktifGlobal = { id: dataSesi.id_kelas, nama: dataSesi.nama_kelas };
+                
+                // Lewati pop-up langsung tampilkan dashboard utama
+                document.getElementById('popupPilihKelas').classList.add('hidden');
+                document.getElementById('popupFormGuru').classList.add('hidden');
+                document.getElementById('dashboardUtama').classList.remove('hidden');
+                
+                document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${dataSesi.nama_guru}!`;
+                document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data Ujian ASAJ: ${dataSesi.nama_kelas} (${dataSesi.id_kelas})`;
+                
+                // Muat data background
+                muatDataSiswaEksisting();
+                cekSaklarMapelAktif();
+            } catch(e) {
+                localStorage.removeItem('asaj_admin_session');
+            }
+        }
+    });
+
     function bukaPopupKelas() {
       document.getElementById('popupPilihKelas').classList.remove('hidden');
       document.getElementById('popupFormGuru').classList.add('hidden');
@@ -418,6 +443,13 @@
           .then(res => {
             document.getElementById('loader-halaman').classList.add('hidden');
             if(res.status === 'success') {
+              // SIMPAN SESI KE LOCALSTORAGE
+              localStorage.setItem('asaj_admin_session', JSON.stringify({
+                  id_kelas: idKls,
+                  nama_kelas: namaKls,
+                  nama_guru: res.nama_guru
+              }));
+
               document.getElementById('dashboardUtama').classList.remove('hidden');
               document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${res.nama_guru}!`;
               document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data Ujian ASAJ: ${namaKls} (${idKls})`;
@@ -437,7 +469,9 @@
 
     function logoutAdmin() {
         if(confirm("Apakah anda yakin ingin logout dari sistem?")) {
-            window.location.href = "https://sugeng1104.github.io/asaj-ranu1/index.html";
+            // HAPUS SESI DARI LOCALSTORAGE
+            localStorage.removeItem('asaj_admin_session');
+            window.location.reload(); // Reload kembali untuk memicu Pop-up awal mula
         }
     }
 
@@ -664,7 +698,6 @@
                         gambarHtml = `<div class="mb-1"><img src="${soal.gambar}" class="img-thumbnail" style="max-height:65px; object-fit:contain;" onerror="this.src='https://placehold.co/100x60?text=Error+Image'"></div>`;
                     }
 
-                    // Menambahkan Tombol Unggah Gambar kembali di kolom aksi gambar
                     let tombolUnggahHtml = `
                         <button type="button" class="btn btn-sm btn-outline-info font-bold px-2 py-1 text-xs w-100" onclick="unggahGambarSoal('${soal.id_soal}', '${namaSheet}')">
                             <i class="fa-solid fa-camera"></i> Unggah
@@ -701,7 +734,6 @@
     function unggahGambarSoal(idSoal, namaSheet) {
         targetUploadGambar.idSoal = idSoal;
         targetUploadGambar.sheetName = namaSheet;
-        // Memicu klik pada input file tersembunyi
         document.getElementById('inputFileGambarDinamis').click();
     }
 
@@ -735,7 +767,7 @@
                 })
                 .catch(() => alert("Gagal mengunggah file gambar ke server."))
                 .finally(() => {
-                    input.value = ""; // reset input berkas
+                    input.value = ""; 
                     document.getElementById('loader-halaman').classList.add('hidden');
                 });
             };
