@@ -36,6 +36,16 @@
                     <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Token / PIN</label>
                     <input type="password" id="token" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold tracking-[0.1em] text-left focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" placeholder="Masukkan token">
                 </div>
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Mata Pelajaran Ujian</label>
+                    <select id="mapel-pilihan" required class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-bold text-slate-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all">
+                        <option value="Master_Pancasila">PENDIDIKAN PANCASILA</option>
+                        <option value="Master_Bahasa Indonesia">BAHASA INDONESIA</option>
+                        <option value="Master_IPAS">IPAS</option>
+                        <option value="Master_Bahasa Inggris">BAHASA INGGRIS</option>
+                        <option value="Master_Soal">MATEMATIKA (Master_Soal)</option>
+                    </select>
+                </div>
                 <button type="submit" id="btn-login" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4 cursor-pointer">
                     Masuk Ruang Ujian
                 </button>
@@ -86,7 +96,7 @@
 
         <main class="max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start flex-grow">
             <div class="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-md relative min-h-[450px] flex flex-col justify-between">
-                <div id="loading-soal" class="text-center text-slate-400 font-medium my-auto py-12">Mengunduh butir soal dari Master_Soal...</div>
+                <div id="loading-soal" class="text-center text-slate-400 font-medium my-auto py-12">Mengunduh butir soal...</div>
                 
                 <div id="box-soal-inti" class="hidden w-full">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-4 mb-5">
@@ -189,6 +199,7 @@
             event.preventDefault();
             const user = document.getElementById("username").value.trim();
             const token = document.getElementById("token").value.trim();
+            const sheetMapel = document.getElementById("mapel-pilihan").value;
             const btn = document.getElementById("btn-login");
 
             btn.disabled = true;
@@ -205,6 +216,8 @@
                         });
                         
                         if (cocok) {
+                            // Simpan nama sheet target ke dalam sesi lokal siswa
+                            localStorage.setItem("sheet_target_kls4", sheetMapel);
                             localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
                             bukaHalamanUjian(cocok);
                         } else {
@@ -266,7 +279,11 @@
         }
 
         function muatMasterSoal() {
-            fetch(`${API_URL}?action=ambilMasterSoal&id_kelas=KLS-04`)
+            // Membaca nama sheet mapel pilihan dari session storage
+            const targetSheet = localStorage.getItem("sheet_target_kls4") || "Master_Soal";
+            
+            // Mengirimkan parameter tambahan &sheet_name agar dibaca dinamis oleh script Google Sheets
+            fetch(`${API_URL}?action=ambilMasterSoal&id_kelas=KLS-04&sheet_name=${encodeURIComponent(targetSheet)}`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
@@ -293,7 +310,7 @@
                         renderGridNomor();
                         tampilkanSoalSpesifik(indexSoalAktif);
                     } else {
-                        document.getElementById("loading-soal").innerText = "Tidak ada bank soal untuk kelas ini di Master_Soal.";
+                        document.getElementById("loading-soal").innerText = `Tidak ada bank soal di lembar ${targetSheet}.`;
                     }
                 })
                 .catch(() => {
@@ -439,7 +456,6 @@
                 status_ujian: statusUjian
             };
 
-            // Solusi Ampuh Eror CORS: Menggunakan Beacon jika browser mendukung saat halaman ditutup, atau fetch no-cors POST
             if (statusUjian === "SELESAI" && navigator.sendBeacon) {
                 const blob = new Blob([JSON.stringify(payload)], { type: 'text/plain' });
                 navigator.sendBeacon(API_URL, blob);
@@ -484,11 +500,13 @@
                 
                 localStorage.removeItem("asaj_timer_kls4");
                 localStorage.removeItem("asaj_answers_kls4");
+                localStorage.removeItem("sheet_target_kls4"); // hapus sesi mapel saat selesai
             }
         }
 
         function logoutSiswa() {
             localStorage.removeItem("sesi_siswa_asaj_kls4");
+            localStorage.removeItem("sheet_target_kls4");
             location.reload();
         }
     </script>
