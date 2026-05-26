@@ -44,7 +44,7 @@
 
   <div id="loader-halaman" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center space-y-3 z-50">
     <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-    <p class="font-semibold text-slate-300">Sinkronisasi & memproses data ke cloud database...</p>
+    <p id="loader-text" class="font-semibold text-slate-300">Sinkronisasi & memproses data ke cloud database...</p>
   </div>
 
   <div id="popupPilihKelas" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-40">
@@ -276,14 +276,14 @@
                             <table class="table table-dark table-striped table-bordered align-middle small mb-0">
                                 <thead>
                                     <tr>
-                                        <th>No Soal</th>
+                                        <th style="width: 70px;">No Soal</th>
                                         <th>ID Soal</th>
                                         <th>Mapel</th>
                                         <th>Jenis</th>
                                         <th>Pertanyaan & Opsi</th>
                                         <th>Kunci</th>
                                         <th>Bobot</th>
-                                        <th style="min-width: 145px;">Gambar Soal</th>
+                                        <th style="min-width: 220px;">Gambar & Aksi Unggah</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabelSoalBody">
@@ -336,6 +336,24 @@
     let mentahSemuaSoal = []; 
     let mapelTerpilihAktif = ""; 
     let dataSoalMassalTerbaca = [];
+    let dataSiswaMassalTerbaca = [];
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedSession = sessionStorage.getItem('admin_session_asaj');
+      if (savedSession) {
+        const sessionData = JSON.parse(savedSession);
+        kelasAktifGlobal = sessionData.kelas;
+        
+        document.getElementById('popupPilihKelas').classList.add('hidden');
+        document.getElementById('popupFormGuru').classList.add('hidden');
+        
+        document.getElementById('dashboardUtama').classList.remove('hidden');
+        document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${sessionData.nama_guru}!`;
+        document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data Ujian ASAJ: ${sessionData.kelas.nama} (${sessionData.kelas.id})`;
+        
+        muatDataSiswaEksisting();
+      }
+    });
 
     function bukaPopupKelas() {
       document.getElementById('popupPilihKelas').classList.remove('hidden');
@@ -410,6 +428,9 @@
           .then(res => {
             document.getElementById('loader-halaman').classList.add('hidden');
             if(res.status === 'success') {
+              const dataSesi = { nama_guru: res.nama_guru, kelas: kelasAktifGlobal };
+              sessionStorage.setItem('admin_session_asaj', JSON.stringify(dataSesi));
+
               document.getElementById('dashboardUtama').classList.remove('hidden');
               document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${res.nama_guru}!`;
               document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data Ujian ASAJ: ${namaKls} (${idKls})`;
@@ -428,12 +449,12 @@
 
     function logoutAdmin() {
         if(confirm("Apakah anda yakin ingin logout dari sistem?")) {
+            sessionStorage.removeItem('admin_session_asaj');
             window.location.href = "https://sugeng1104.github.io/asaj-ranu1/index.html";
         }
     }
 
     // OPERASIONAL SISWA
-    let dataSiswaMassalTerbaca = [];
     function bacaExcelPeserta() {
         const fileInput = document.getElementById('excelPesertaInput');
         if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file excel!");
@@ -495,9 +516,12 @@
       e.preventDefault();
       document.getElementById('loader-halaman').classList.remove('hidden');
       
-      const mapel = document.getElementById('soalMapel').value;
-      // REVISI DETEKSI TARGET SHEET UNTUK PANCASILA
-      const targetSheet = (mapel === 'PANCASILA') ? 'Master_Pancasila' : '';
+      const mapel = document.getElementById('soalMapel').value.toUpperCase();
+      let targetSheet = "Master_Soal";
+      if (mapel === "PANCASILA") targetSheet = "Master_Pancasila";
+      if (mapel === "BAHASA INDONESIA") targetSheet = "Master_Bahasa Indonesia";
+      if (mapel === "IPAS") targetSheet = "Master_IPAS";
+      if (mapel === "BAHASA IGNGRIS" || mapel === "BAHASA INGGRIS") targetSheet = "Master_Bahasa Inggris";
 
       const payload = {
             id_soal: "", 
@@ -527,6 +551,7 @@
       .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
+    // REVISI NOMOR URUT OTOMATIS SAAT BACA EXCEL
     function bacaExcelSoal() {
         const fileInput = document.getElementById('excelSoalInput');
         if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file!");
@@ -539,10 +564,11 @@
                 const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('pertanyaan')) return alert("Format excel salah atau kolom 'pertanyaan' tidak ditemukan!");
                 
-                dataSoalMassalTerbaca = sheetJson.map(soal => {
+                // Urutkan nomor otomatis agar tidak terkunci di nomor 1
+                dataSoalMassalTerbaca = sheetJson.map((soal, index) => {
                     return {
                         id_soal: soal.id_soal || "",
-                        mata_pelajaran: soal.mata_pelajaran || "",
+                        mata_pelajaran: (soal.mata_pelajaran || "UMUM").toUpperCase(),
                         id_kelas: kelasAktifGlobal.id,
                         jenis_soal: soal.jenis_soal || "PILIHAN GANDA",
                         pertanyaan: soal.pertanyaan || "",
@@ -553,7 +579,7 @@
                         kunci_jawaban: (soal.kunci_jawaban || "").toString(),
                         bobot_nilai: Number(soal.bobot_nilai || 1),
                         gambar: soal.gambar || "",
-                        nomor_soal: Number(soal.nomor_soal || 1)
+                        nomor_soal: soal.nomor_soal ? Number(soal.nomor_soal) : (index + 1) // Deteksi dinamis nomor urut otomatis
                     };
                 });
 
@@ -572,11 +598,12 @@
         if(!confirm("Kirim bank soal?")) return;
         document.getElementById('loader-halaman').classList.remove('hidden');
 
-        // REVISI DETEKSI TARGET SHEET MASSAL JIKA MAPELNYA PANCASILA
-        let targetSheet = "";
-        if (dataSoalMassalTerbaca.length > 0 && dataSoalMassalTerbaca[0].mata_pelajaran === 'PANCASILA') {
-            targetSheet = "Master_Pancasila";
-        }
+        let mapel = (dataSoalMassalTerbaca.length > 0) ? dataSoalMassalTerbaca[0].mata_pelajaran.toUpperCase() : "UMUM";
+        let targetSheet = "Master_Soal";
+        if (mapel === "PANCASILA") targetSheet = "Master_Pancasila";
+        if (mapel === "BAHASA INDONESIA") targetSheet = "Master_Bahasa Indonesia";
+        if (mapel === "IPAS") targetSheet = "Master_IPAS";
+        if (mapel === "BAHASA INGGRIS") targetSheet = "Master_Bahasa Inggris";
 
         fetch(API_URL, {
             method: 'POST',
@@ -601,8 +628,11 @@
 
         tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Memuat data bank soal ${mapelTerpilihAktif}...</td></tr>`;
         
-        // JIKA MAPEL AKTIF ADALAH PANCASILA, BERIKAN PARAMETER SPREADSHEET TARGET KE API GET
-        const targetSheetParam = (mapelTerpilihAktif === 'PANCASILA') ? '&target_sheet=Master_Pancasila' : '';
+        let targetSheetParam = '&target_sheet=Master_Soal';
+        if (mapelTerpilihAktif === "PANCASILA") targetSheetParam = '&target_sheet=Master_Pancasila';
+        if (mapelTerpilihAktif === "BAHASA INDONESIA") targetSheetParam = '&target_sheet=Master_Bahasa+Indonesia';
+        if (mapelTerpilihAktif === "IPAS") targetSheetParam = '&target_sheet=Master_IPAS';
+        if (mapelTerpilihAktif === "BAHASA INGGRIS") targetSheetParam = '&target_sheet=Master_Bahasa+Inggris';
 
         fetch(`${API_URL}?action=ambilBankSoal&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}${targetSheetParam}`)
         .then(r => r.json())
@@ -615,7 +645,6 @@
                     return mapelSoal === mapelTerpilihAktif.toUpperCase();
                 });
 
-                // REVISI OTOMATIS URUT DARI NOMOR 1 (ASCENDING)
                 dataSoalTerfilter.sort((a, b) => Number(a.nomor_soal || 0) - Number(b.nomor_soal || 0));
 
                 if (dataSoalTerfilter.length === 0) {
@@ -632,9 +661,10 @@
                     if (soal.gambar && soal.gambar.trim() !== '') {
                         statusIcon = `<i id="icon-status-${soal.id_soal}" class="fa-solid fa-circle-check text-success me-2 fs-5"></i>`;
                         let urlGambar = `https://${GITHUB_USER}.github.io/${GITHUB_REPO}/img/${kelasAktifGlobal.id.toLowerCase()}/${soal.gambar}`;
-                        previewGambar = `<div class="mt-1"><img src="${urlGambar}" class="rounded border border-slate-600" style="max-height: 50px;"></div>`;
+                        previewGambar = `<div class="mt-1"><img src="${urlGambar}" class="rounded border border-slate-600 w-full object-contain" style="max-height: 65px;"></div>`;
                     }
 
+                    // REVISI TOMBOL UNGHAH GAMBAR DIMUNCULKAN KEMBALI DI TIAP BARIS DATABASE SOAL
                     tbody.innerHTML += `
                         <tr>
                             <td class="text-center fw-bold text-warning">${soal.nomor_soal || '-'}</td>
@@ -648,11 +678,17 @@
                             <td><span class="badge bg-success font-monospace">${soal.kunci_jawaban}</span></td>
                             <td class="text-center">${soal.bobot_nilai || 1}</td>
                             <td>
-                                <div class="d-flex align-items-center">
-                                    ${statusIcon}
-                                    <div class="small flex-grow-1">
-                                        <div class="text-truncate" style="max-width: 100px;">${soal.gambar || 'No image'}</div>
-                                        ${previewGambar}
+                                <div class="p-2 bg-slate-900/60 rounded-xl border border-slate-700">
+                                    <div class="d-flex align-items-center mb-1">
+                                        ${statusIcon}
+                                        <span class="small font-monospace text-slate-400 text-truncate block" style="max-width: 110px;">${soal.gambar || 'No image'}</span>
+                                    </div>
+                                    ${previewGambar}
+                                    <div class="mt-2">
+                                        <input type="file" id="file-${soal.id_soal}" class="form-control form-control-sm text-xs bg-slate-950 border-slate-700 text-slate-300 p-1 mb-1" accept="image/*">
+                                        <button type="button" onclick="unggahGambarSoal('${soal.id_soal}', '${soal.nomor_soal}')" class="w-full bg-teal-600 hover:bg-teal-500 text-white font-bold py-1 px-2 rounded text-xs transition-colors border-0">
+                                            🚀 Unggah Gambar
+                                        </button>
                                     </div>
                                 </div>
                             </td>
@@ -662,6 +698,63 @@
                 tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Belum ada peserta / data bank soal di kelas ini.</td></tr>`; 
             }
         });
+    }
+
+    // FUNGSI AKSI INTEGRASI UPLOAD GAMBAR KE GITHUB VIA BACKEND PROXY
+    function unggahGambarSoal(idSoal, nomorSoal) {
+        const fileInput = document.getElementById(`file-${idSoal}`);
+        if (!fileInput.files || fileInput.files.length === 0) {
+            alert("Silakan pilih file gambar terlebih dahulu untuk soal nomor " + nomorSoal);
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const namaEkstensi = file.name.split('.').pop();
+        const namaFileBaru = `soal-${nomorSoal}.${namaEkstensi}`; // Rename otomatis agar rapi di repositori GitHub
+
+        document.getElementById('loader-text').innerText = `Sedang mengunggah gambar soal nomor ${nomorSoal} ke GitHub...`;
+        document.getElementById('loader-halaman').classList.remove('hidden');
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const kontenBase64 = e.target.result.split(',')[1];
+            const pathGithub = `img/${kelasAktifGlobal.id.toLowerCase()}/${namaFileBaru}`;
+
+            let targetSheet = "Master_Soal";
+            if (mapelTerpilihAktif === "PANCASILA") targetSheet = "Master_Pancasila";
+            if (mapelTerpilihAktif === "BAHASA INDONESIA") targetSheet = "Master_Bahasa Indonesia";
+            if (mapelTerpilihAktif === "IPAS") targetSheet = "Master_IPAS";
+            if (mapelTerpilihAktif === "BAHASA INGGRIS") targetSheet = "Master_Bahasa Inggris";
+
+            const payloadData = {
+                action: "proxyUploadGithub",
+                id_soal: idSoal,
+                path: pathGithub,
+                content: kontenBase64,
+                nama_gambar: namaFileBaru,
+                target_sheet: targetSheet
+            };
+
+            fetch(API_URL, {
+                method: "POST",
+                body: JSON.stringify(payloadData)
+            })
+            .then(r => r.json())
+            .then(res => {
+                if (res.status === "success") {
+                    alert(`Berhasil mengunggah gambar untuk soal nomor ${nomorSoal}!`);
+                    muatBankSoal();
+                } else {
+                    alert("Gagal unggah: " + res.message);
+                }
+            })
+            .catch(err => alert("Error upload server: " + err.toString()))
+            .finally(() => {
+                document.getElementById('loader-text').innerText = "Sinkronisasi & memproses data ke cloud database...";
+                document.getElementById('loader-halaman').classList.add('hidden');
+            });
+        };
+        reader.readAsDataURL(file);
     }
 
     function aktifkanMataPelajaran() {
