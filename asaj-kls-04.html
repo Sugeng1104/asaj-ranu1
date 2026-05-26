@@ -189,19 +189,19 @@
             btnLogin.innerHTML = '<i class="fa-solid fa-spinner animate-spin mr-2"></i> Memproses Verifikasi...';
 
             try {
-                // LANGKAH 1: Deteksi Saklar Status Ujian Aktif dari Admin (POST)
+                // LANGKAH 1: Deteksi Saklar Status Ujian Aktif dari Admin (POST) ke sheet Status_Ujian
                 const resSaklar = await fetch(URL_BACKEND, {
                     method: "POST",
                     body: JSON.stringify({ action: "getMapelAktif", id_kelas: selectKelas })
                 });
                 const dataSaklar = await resSaklar.json();
 
+                // Cek apakah sheet Status_Ujian mengizinkan mapel ini aktif untuk kelas terkait
                 const serverMapelAktif = dataSaklar.mapel_aktif ? dataSaklar.mapel_aktif.toString().toUpperCase().trim() : "";
                 const userMapelPilihan = selectMapel.toString().toUpperCase().trim();
 
-                // Cek Keselarasan Saklar Pembukaan Ujian
                 if (serverMapelAktif !== userMapelPilihan) {
-                    alert(`Maaf, Mata Pelajaran ${selectMapel} belum dimulai.`);
+                    alert(`Maaf, Ujian Mata Pelajaran ${selectMapel} untuk kelas ini sedang tidak aktif atau belum dibuka.`);
                     resetTombolLogin();
                     return;
                 }
@@ -321,7 +321,7 @@
             containerPilihan.innerHTML = "";
 
             const opsiHuruf = ["A", "B", "C", "D"];
-            opshiHuruf.forEach(huruf => {
+            opsiHuruf.forEach(huruf => {
                 const kolomKunci = `pilihan_${huruf.toLowerCase()}`;
                 const teksOpsi = soal[kolomKunci];
 
