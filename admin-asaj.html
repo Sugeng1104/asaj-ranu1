@@ -330,7 +330,7 @@
     </div>
   </div>
 
-  <input type="file" id="inputFileGambarDinamis" class="hidden" accept="image/*" onchange="prosesUnggahGambarDinamis(this)">
+  <input type="file" id="inputFileGambarDinamis" class="hidden" accept="image/png" onchange="prosesUnggahGambarDinamis(this)">
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -345,15 +345,13 @@
     let kelasAktifGlobal = {};
     let targetUploadGambar = { idSoal: '', sheetName: '' };
 
-    // --- STRATEGI PERSISTENSI REFRESH (LOCALSTORAGE) ---
     window.addEventListener('DOMContentLoaded', () => {
-        const sesiSImpanan = localStorage.getItem('asaj_admin_session');
-        if (sesiSImpanan) {
+        const sesiSimpanan = localStorage.getItem('asaj_admin_session');
+        if (sesiSimpanan) {
             try {
-                const dataSesi = JSON.parse(sesiSImpanan);
+                const dataSesi = JSON.parse(sesiSimpanan);
                 kelasAktifGlobal = { id: dataSesi.id_kelas, nama: dataSesi.nama_kelas };
                 
-                // Lewati pop-up langsung tampilkan dashboard utama
                 document.getElementById('popupPilihKelas').classList.add('hidden');
                 document.getElementById('popupFormGuru').classList.add('hidden');
                 document.getElementById('dashboardUtama').classList.remove('hidden');
@@ -361,7 +359,6 @@
                 document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${dataSesi.nama_guru}!`;
                 document.getElementById('txtDetailKelas').innerText = `Pusat Kontrol Data Ujian ASAJ: ${dataSesi.nama_kelas} (${dataSesi.id_kelas})`;
                 
-                // Muat data background
                 muatDataSiswaEksisting();
                 cekSaklarMapelAktif();
             } catch(e) {
@@ -443,7 +440,6 @@
           .then(res => {
             document.getElementById('loader-halaman').classList.add('hidden');
             if(res.status === 'success') {
-              // SIMPAN SESI KE LOCALSTORAGE
               localStorage.setItem('asaj_admin_session', JSON.stringify({
                   id_kelas: idKls,
                   nama_kelas: namaKls,
@@ -469,7 +465,6 @@
 
     function logoutAdmin() {
         if(confirm("Apakah anda yakin ingin logout dari sistem?")) {
-            // HAPUS SESI DARI LOCALSTORAGE
             localStorage.removeItem('asaj_admin_session');
             window.location.reload();
         }
@@ -527,7 +522,6 @@
 
     let dataSiswaMassalTerbaca = [];
 
-    // --- BACA EXCEL DATA SISWA ---
     function bacaExcelPeserta() {
         const fileInput = document.getElementById('excelPesertaInput');
         if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file excel!");
@@ -568,7 +562,6 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // --- KIRIM SISWA MASSAL ---
     function kirimPesertaMassal() {
         if(dataSiswaMassalTerbaca.length === 0) return;
         if(!confirm(`Simpan ${dataSiswaMassalTerbaca.length} peserta ke server?`)) return;
@@ -598,7 +591,6 @@
         .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
-    // --- MUAT DATA SISWA EKSISTING ---
     function muatDataSiswaEksisting() {
         const tbody = document.getElementById('tabelPesertaBody');
         tbody.innerHTML = `<tr><td colspan="5" class="text-center text-slate-300"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Memuat data siswa...</td></tr>`;
@@ -628,7 +620,7 @@
     }
 
     // =========================================================================
-    // MODUL REKAP BANK SOAL (SINGKRON STRUKTUR BARU)
+    // MODUL REKAP BANK SOAL
     // =========================================================================
     let dataSoalMassalTerbaca = [];
 
@@ -644,7 +636,6 @@
         }
     }
 
-    // --- BACA EXCEL BANK SOAL ---
     function bacaExcelSoal() {
         const fileInput = document.getElementById('excelSoalInput');
         if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file excel bank soal!");
@@ -671,7 +662,6 @@
         reader.readAsArrayBuffer(file);
     }
 
-    // --- KIRIM SOAL MASSAL VIA EXCEL ---
     function kirimSoalMassal() {
         if(dataSoalMassalTerbaca.length === 0) return;
         if(!confirm("Apakah Anda yakin ingin mengimpor seluruh bank soal dari Excel ini?")) return;
@@ -699,7 +689,6 @@
         .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
-    // --- TAMBAH SOAL TUNGGAL MANUAL (MENGIKUTI STRUKTUR KOLOM BARU ANDA) ---
     function simpanSoalTunggal(e) {
         e.preventDefault();
         document.getElementById('loader-halaman').classList.remove('hidden');
@@ -740,7 +729,7 @@
         .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
-    // --- BUKA & TAMPILKAN BANK SOAL ---
+    // --- STRATEGI BACA & TAMPILKAN FILE FORMAT .PNG DARI SUBFOLDER FOLDER img/kls-xx ---
     function muatBankSoal() {
         const mapelTerpilih = document.getElementById('pilihMapelDatabase').value;
         const tbody = document.getElementById('tabelSoalBody');
@@ -763,9 +752,14 @@
                     
                     let slotGambar = '';
                     if(soal.gambar && soal.gambar.trim() !== "") {
-                        const urlSajiGambar = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/assets/img/${soal.gambar}`;
+                        let namaFileSaja = soal.gambar.split('/').pop();
+                        const folderKelas = kelasAktifGlobal.id.toLowerCase(); 
+                        
+                        // Konstruksi URL gambar dipaksa membaca dari repositori utama Github format .png
+                        const urlSajiGambar = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/img/${folderKelas}/${namaFileSaja}`;
+                        
                         slotGambar = `
-                        <div class="mb-2"><img src="${urlSajiGambar}" class="img-thumbnail d-block mx-auto" style="max-height:80px;"></div>
+                        <div class="mb-2"><img src="${urlSajiGambar}" class="img-thumbnail d-block mx-auto" style="max-height:80px;" onerror="this.onerror=null;this.src='https://placehold.co/120x80/222/fff?text=Format+.PNG';"></div>
                         <button class="btn btn-xs btn-danger font-bold text-xs w-100" onclick="pemicuUnggahGambar('${soal.id_soal}', '${mapelTerpilih}')">🔄 Ganti</button>`;
                     } else {
                         slotGambar = `<button class="btn btn-xs btn-outline-info font-bold text-xs w-100" onclick="pemicuUnggahGambar('${soal.id_soal}', '${mapelTerpilih}')"><i class="fa-solid fa-image"></i> Pasang Gambar</button>`;
@@ -794,17 +788,21 @@
         });
     }
 
-    // --- MODUL UNGHAH GAMBAR PROXY GITHUB ---
     function pemicuUnggahGambar(idSoal, mapel) {
         targetUploadGambar = { idSoal: idSoal, sheetName: mapel };
         document.getElementById('inputFileGambarDinamis').click();
     }
 
+    // --- PROSES UNGHAH DAN PAKSA EKSTENSI KELUARAN MENJADI .PNG ---
     function prosesUnggahGambarDinamis(inputElement) {
         if(!inputElement.files || inputElement.files.length === 0) return;
         const file = inputElement.files[0];
         
-        const namaFileUnik = `IMG-${targetUploadGambar.idSoal}-${new Date().getTime()}.${file.name.split('.').pop()}`;
+        const folderKelas = kelasAktifGlobal.id.toLowerCase(); 
+        
+        // Penamaan file diatur otomatis berakhiran .png secara paten
+        const namaFileUnik = `IMG-${targetUploadGambar.idSoal}-${new Date().getTime()}.png`;
+        
         document.getElementById('loader-halaman').classList.remove('hidden');
         
         const reader = new FileReader();
@@ -817,9 +815,9 @@
                     action: 'proxyUploadGithub',
                     id_soal: targetUploadGambar.idSoal,
                     mata_pelajaran: targetUploadGambar.sheetName,
-                    path: `assets/img/${namaFileUnik}`,
+                    path: `img/${folderKelas}/${namaFileUnik}`, 
                     content: base64Content,
-                    nama_gambar: namaFileUnik
+                    nama_gambar: namaFileUnik 
                 })
             })
             .then(res => res.json())
@@ -827,7 +825,7 @@
                 alert(res.message);
                 muatBankSoal();
             })
-            .catch(() => alert("Gagal melemparkan data file ke repositori."))
+            .catch(() => alert("Gagal mengirimkan file gambar PNG ke repositori."))
             .finally(() => {
                 inputElement.value = "";
                 document.getElementById('loader-halaman').classList.add('hidden');
@@ -836,7 +834,6 @@
         reader.readAsDataURL(file);
     }
 
-    // --- MUAT REKAP NILAI ---
     function muatRekapNilai() {
         const tbody = document.getElementById('tabelNilaiBody');
         tbody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-300"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Mengunduh rekap nilai...</td></tr>`;
