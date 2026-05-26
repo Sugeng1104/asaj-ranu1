@@ -267,11 +267,9 @@
         }
 
         function muatMasterSoal() {
-            // Mengubah format target pencarian ke Master_Pancasila, Master_Matematika, dll.
             const namaSheetTarget = "Master_" + mapelPilihanSiswa;
 
-            // Memanggil langsung tab sheet mapel yang dipilih agar terhindar dari eror penundaan
-            fetch(`${API_URL}?action=${namaSheetTarget}&id_kelas=KLS-04`)
+            fetch(`${API_URL}?action=ambilBankSoal&mata_pelajaran=${encodeURIComponent(mapelPilihanSiswa)}&id_kelas=KLS-04`)
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
@@ -327,7 +325,7 @@
             const el = elemen || document.getElementById(`btn-no-${idx}`);
             if (!el) return;
 
-            const adaJawaban = mapJawabanSiswa[idx] && mapJawabanSiswa[idx].toString().trim() !== "";
+            const adaJawaban = mapJawabanSiswa[idx] !== undefined && mapJawabanSiswa[idx].toString().trim() !== "";
 
             if (idx === indexSoalAktif) {
                 el.className = "py-3 text-sm font-black rounded-xl border-2 border-blue-500 bg-blue-50 text-blue-600 text-center cursor-pointer shadow-inner";
@@ -404,6 +402,7 @@
         function pilihJawabanIsian(nilaiTeks) {
             mapJawabanSiswa[indexSoalAktif] = nilaiTeks.trim().toUpperCase();
             localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); 
+            updateWarnaNomorSatuPerSatu(indexSoalAktif);
             kirimKeSpreadsheetOtomatis("BELUM SELESAI"); 
         }
 
@@ -419,9 +418,9 @@
             }
         }
 
-        function kirimKeSpreadsheetOtomatis(statusUjian) {
+        function kirimKeSpreadsheetOtomatis(statusUjian, callback) {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-            if (!dataSiswa || dataSoalUjian.length === 0) return;
+            if (!dataSiswa || dataSoalUjian.length === 0) return 0;
 
             let totalSkorSiswa = 0;
             let barisJawaban = [];
@@ -448,13 +447,23 @@
                 status_ujian: statusUjian
             };
 
+            // Perbaikan krusial pada metode POST ke Google App Script
             fetch(API_URL, {
                 method: "POST",
+                mode: "no-cors", // Menghindari eror kebijakan CORS browser
+                headers: {
+                    "Content-Type": "text/plain"
+                },
                 body: JSON.stringify(payload)
             })
-            .then(res => res.json())
-            .then(res => console.log("Cloud Sync: ", res.message))
-            .catch(err => console.error("Cloud Sync Gagal: ", err));
+            .then(() => {
+                console.log("Cloud Sync Berhasil.");
+                if(callback) callback(totalSkorSiswa);
+            })
+            .catch(err => {
+                console.error("Cloud Sync Gagal: ", err);
+                if(callback) callback(totalSkorSiswa);
+            });
 
             return totalSkorSiswa;
         }
@@ -463,25 +472,26 @@
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
                 clearInterval(intervalTimer);
                 
-                const nilaiFinal = kirimKeSpreadsheetOtomatis("SELESAI");
+                // Panggil penyimpanan akhir, lalu tampilkan modal rekap setelah sukses terkirim
+                kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
+                    const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+                    document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
+                    
+                    const displaySkor = document.getElementById("score-display");
+                    displaySkor.innerText = nilaiFinal;
+                    displaySkor.className = "text-6xl font-black"; 
 
-                const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-                document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
-                
-                const displaySkor = document.getElementById("score-display");
-                displaySkor.innerText = nilaiFinal;
-                displaySkor.className = "text-6xl font-black"; 
+                    if (nilaiFinal < 70) displaySkor.classList.add("text-red-600");
+                    else if (nilaiFinal <= 89) displaySkor.classList.add("text-blue-600");
+                    else if (nilaiFinal <= 99) displaySkor.classList.add("text-amber-500");
+                    else if (nilaiFinal === 100) displaySkor.classList.add("emas-menyala");
 
-                if (nilaiFinal < 70) displaySkor.classList.add("text-red-600");
-                else if (nilaiFinal <= 89) displaySkor.classList.add("text-blue-600");
-                else if (nilaiFinal <= 99) displaySkor.classList.add("text-amber-500");
-                else if (nilaiFinal === 100) displaySkor.classList.add("emas-menyala");
-
-                document.getElementById("success-modal").classList.remove("hidden");
-                
-                localStorage.removeItem("asaj_timer_kls4");
-                localStorage.removeItem("asaj_answers_kls4");
-                localStorage.removeItem("asaj_mapel_kls4");
+                    document.getElementById("success-modal").classList.remove("hidden");
+                    
+                    localStorage.removeItem("asaj_timer_kls4");
+                    localStorage.removeItem("asaj_answers_kls4");
+                    localStorage.removeItem("asaj_mapel_kls4");
+                });
             }
         }
 
