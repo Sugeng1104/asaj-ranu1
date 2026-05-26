@@ -521,7 +521,7 @@
       if (mapel === "PANCASILA") targetSheet = "Master_Pancasila";
       if (mapel === "BAHASA INDONESIA") targetSheet = "Master_Bahasa Indonesia";
       if (mapel === "IPAS") targetSheet = "Master_IPAS";
-      if (mapel === "BAHASA IGNGRIS" || mapel === "BAHASA INGGRIS") targetSheet = "Master_Bahasa Inggris";
+      if (mapel === "BAHASA INGGRIS") targetSheet = "Master_Bahasa Inggris";
 
       const payload = {
             id_soal: "", 
@@ -551,7 +551,6 @@
       .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
-    // REVISI NOMOR URUT OTOMATIS SAAT BACA EXCEL
     function bacaExcelSoal() {
         const fileInput = document.getElementById('excelSoalInput');
         if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file!");
@@ -564,7 +563,6 @@
                 const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
                 if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('pertanyaan')) return alert("Format excel salah atau kolom 'pertanyaan' tidak ditemukan!");
                 
-                // Urutkan nomor otomatis agar tidak terkunci di nomor 1
                 dataSoalMassalTerbaca = sheetJson.map((soal, index) => {
                     return {
                         id_soal: soal.id_soal || "",
@@ -579,7 +577,7 @@
                         kunci_jawaban: (soal.kunci_jawaban || "").toString(),
                         bobot_nilai: Number(soal.bobot_nilai || 1),
                         gambar: soal.gambar || "",
-                        nomor_soal: soal.nomor_soal ? Number(soal.nomor_soal) : (index + 1) // Deteksi dinamis nomor urut otomatis
+                        nomor_soal: soal.nomor_soal ? Number(soal.nomor_soal) : (index + 1)
                     };
                 });
 
@@ -664,7 +662,6 @@
                         previewGambar = `<div class="mt-1"><img src="${urlGambar}" class="rounded border border-slate-600 w-full object-contain" style="max-height: 65px;"></div>`;
                     }
 
-                    // REVISI TOMBOL UNGHAH GAMBAR DIMUNCULKAN KEMBALI DI TIAP BARIS DATABASE SOAL
                     tbody.innerHTML += `
                         <tr>
                             <td class="text-center fw-bold text-warning">${soal.nomor_soal || '-'}</td>
@@ -700,7 +697,44 @@
         });
     }
 
-    // FUNGSI AKSI INTEGRASI UPLOAD GAMBAR KE GITHUB VIA BACKEND PROXY
+    // UPDATE: FUNGSI SAKLAR INTEGRASI CLOUD DATABASE
+    function aktifkanMataPelajaran() {
+        const mapelPilihan = document.getElementById("dropdown-pilih-mapel").value;
+        if (!mapelPilihan) {
+            alert("Silakan pilih mata pelajaran terlebih dahulu di menu dropdown!");
+            return;
+        }
+        
+        if (!confirm(`Apakah Anda yakin ingin mengaktifkan ujian ${mapelPilihan} untuk ${kelasAktifGlobal.nama}?`)) return;
+
+        document.getElementById('loader-text').innerText = `Mengubah ujian aktif menjadi ${mapelPilihan}...`;
+        document.getElementById('loader-halaman').classList.remove('hidden');
+
+        fetch(API_URL, {
+            method: "POST",
+            body: JSON.stringify({
+                action: "setMapelAktif",
+                id_kelas: kelasAktifGlobal.id,
+                mata_pelajaran: mapelPilihan
+            })
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.status === "success") {
+                alert(`Ujian ${mapelPilihan} untuk ${kelasAktifGlobal.nama} BERHASIL DIAKTIFKAN di cloud server!`);
+                mapelTerpilihAktif = mapelPilihan;
+                muatBankSoal();
+            } else {
+                alert("Gagal mengaktifkan mata pelajaran: " + res.message);
+            }
+        })
+        .catch(err => alert("Error koneksi server: " + err.toString()))
+        .finally(() => {
+            document.getElementById('loader-text').innerText = "Sinkronisasi & memproses data ke cloud database...";
+            document.getElementById('loader-halaman').classList.add('hidden');
+        });
+    }
+
     function unggahGambarSoal(idSoal, nomorSoal) {
         const fileInput = document.getElementById(`file-${idSoal}`);
         if (!fileInput.files || fileInput.files.length === 0) {
@@ -710,7 +744,7 @@
 
         const file = fileInput.files[0];
         const namaEkstensi = file.name.split('.').pop();
-        const namaFileBaru = `soal-${nomorSoal}.${namaEkstensi}`; // Rename otomatis agar rapi di repositori GitHub
+        const namaFileBaru = `soal-${nomorSoal}.${namaEkstensi}`;
 
         document.getElementById('loader-text').innerText = `Sedang mengunggah gambar soal nomor ${nomorSoal} ke GitHub...`;
         document.getElementById('loader-halaman').classList.remove('hidden');
@@ -755,16 +789,6 @@
             });
         };
         reader.readAsDataURL(file);
-    }
-
-    function aktifkanMataPelajaran() {
-        const mapelPilihan = document.getElementById("dropdown-pilih-mapel").value;
-        if (!mapelPilihan) {
-            alert("Silakan pilih mata pelajaran terlebih dahulu di menu dropdown!");
-            return;
-        }
-        mapelTerpilihAktif = mapelPilihan;
-        muatBankSoal();
     }
 
     // OPERASIONAL REKAP NILAI
