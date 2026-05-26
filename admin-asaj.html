@@ -206,6 +206,10 @@
 
                         <form id="formSoalTunggal" onsubmit="simpanSoalTunggal(event)" class="text-white">
                             <div class="mb-2">
+                                <label class="form-label small text-slate-300">Nomor Soal</label>
+                                <input type="number" id="soalNomor" class="form-control form-control-sm" placeholder="Contoh: 1" min="1" required>
+                            </div>
+                            <div class="mb-2">
                                 <label class="form-label small text-slate-300">Mata Pelajaran</label>
                                 <select id="soalMapel" class="form-select form-select-sm" required>
                                     <option value="" disabled selected>-- PILIH MATA PELAJARAN --</option>
@@ -281,8 +285,8 @@
                             <table class="table table-dark table-striped table-bordered align-middle small mb-0">
                                 <thead>
                                     <tr>
+                                        <th style="width: 80px;">No. Soal</th>
                                         <th>ID Soal</th>
-                                        <th>Mapel</th>
                                         <th>Jenis</th>
                                         <th>Pertanyaan & Opsi</th>
                                         <th>Kunci</th>
@@ -546,6 +550,7 @@
       document.getElementById('loader-halaman').classList.remove('hidden');
       const payload = {
             action: 'simpanSoalManual',
+            nomor_soal: document.getElementById('soalNomor').value,
             mata_pelajaran: document.getElementById('soalMapel').value,
             id_kelas: kelasAktifGlobal.id,
             jenis_soal: document.getElementById('soalJenis').value,
@@ -555,7 +560,7 @@
             pilihan_c: document.getElementById('soalOpsiC').value,
             pilihan_d: document.getElementById('soalOpsiD').value,
             kunci_jawaban: document.getElementById('soalKunci').value,
-            bobot: document.getElementById('soalBobot').value
+            bobot_nilai: document.getElementById('soalBobot').value
       };
 
       fetch(API_URL, {
@@ -657,15 +662,15 @@
                     }
 
                     tbody.innerHTML += `<tr>
+                        <td class="text-center font-bold text-amber-400">${soal.nomor_soal || '-'}</td>
                         <td><code>${soal.id_soal || '-'}</code></td>
-                        <td><span class="badge bg-primary text-xs">${mapelTerpilih}</span></td>
-                        <td><small class="fw-bold">${soal.jenis_soal || '-'}</small></td>
+                        <td><small class="fw-bold text-slate-300">${soal.jenis_soal || '-'}</small></td>
                         <td>
                             <div class="fw-semibold text-white">${soal.pertanyaan || '-'}</div>
                             ${opsiHtml}
                         </td>
                         <td><b class="text-warning">${soal.kunci_jawaban || '-'}</b></td>
-                        <td class="text-center">${soal.bobot || '1'}</td>
+                        <td class="text-center">${soal.bobot_nilai || '1'}</td>
                         <td class="text-center">${gambarHtml}</td>
                     </tr>`;
                 });
