@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .emas-menyala {
@@ -21,7 +21,7 @@
         /* Style Tambahan untuk memaksa video berbentuk kotak di header */
         #container-video-pengawas video {
             aspect-ratio: 1 / 1;
-            object-cover: cover;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -219,7 +219,6 @@
             const errorView = document.getElementById("status-kamera-error");
 
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                // Konfigurasi kamera berbentuk kotak (1:1)
                 navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 200 }, height: { ideal: 200 }, aspectRatio: 1.0 } })
                 .then(function(stream) {
                     streamKamera = stream;
@@ -349,7 +348,7 @@
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
 
-            aktifkanKameraSiswa(); // Trigger kamera menyala saat halaman ujian dibuka
+            aktifkanKameraSiswa(); 
             jalankanTimerUjian();
             muatMasterSoal();
         }
@@ -585,7 +584,7 @@
         function prosesSelesaiUjian() {
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
                 clearInterval(intervalTimer);
-                matikanKameraSiswa(); // Matikan kamera jika ujian selesai
+                matikanKameraSiswa(); 
                 
                 kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
                     const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
