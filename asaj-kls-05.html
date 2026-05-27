@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
+    <title>Ujian ASAJ Kelas 5 - SDN Ranuklindungan I</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -198,15 +198,15 @@
         let streamKamera = null; 
 
         document.addEventListener("DOMContentLoaded", function() {
-            const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
-            const mapelSaved = localStorage.getItem("asaj_mapel_kls4");
+            const sesi = localStorage.getItem("sesi_siswa_asaj_kls5");
+            const mapelSaved = localStorage.getItem("asaj_mapel_kls5");
             
             if (sesi && mapelSaved) { 
                 mapelPilihanSiswa = mapelSaved.toString().toUpperCase().trim();
-                const waktuLokal = localStorage.getItem("asaj_timer_kls4");
+                const waktuLokal = localStorage.getItem("asaj_timer_kls");
                 if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
                 
-                const mapLokal = localStorage.getItem("asaj_answers_kls4");
+                const mapLokal = localStorage.getItem("asaj_answers_kls5");
                 if (mapLokal) { mapJawabanSiswa = JSON.parse(mapLokal); }
 
                 bukaHalamanUjian(JSON.parse(sesi)); 
@@ -267,7 +267,7 @@
                 },
                 body: JSON.stringify({
                     action: "prosesLoginSiswa",
-                    id_kelas: "KLS-04",
+                    id_kelas: "KLS-05",
                     mata_pelajaran: mapel,
                     username: user,
                     token: token
@@ -301,14 +301,14 @@
                         body: JSON.stringify({
                             action: "ambilBankSoal",
                             mata_pelajaran: mapelPilihanSiswa,
-                            id_kelas: "KLS-04"
+                            id_kelas: "KLS-05"
                         })
                     })
                     .then(soalRes => soalRes.json())
                     .then(responSoal => {
                         if (responSoal.status === "success" && responSoal.data && responSoal.data.length > 0) {
-                            localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(dataSiswaTerverifikasi));
-                            localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
+                            localStorage.setItem("sesi_siswa_asaj_kls5", JSON.stringify(dataSiswaTerverifikasi));
+                            localStorage.setItem("asaj_mapel_kls5", mapelPilihanSiswa);
                             bukaHalamanUjian(dataSiswaTerverifikasi);
                         } else {
                             alert(`Maaf, berkas butir soal untuk ${mapelPilihanSiswa} tidak ditemukan di master.`);
@@ -341,7 +341,7 @@
             
             document.getElementById("display-nama").innerText = siswa.nama_lengkap || siswa.NAMA_LENGKAP || "Siswa";
             document.getElementById("display-idsiswa").innerText = siswa.id_siswa || siswa.ID_SISWA || "-";
-            document.getElementById("display-idkelas").innerText = "KLS-04"; 
+            document.getElementById("display-idkelas").innerText = "KLS-05"; 
             document.getElementById("display-status").innerText = "AKTIF";
 
             aktifkanKameraSiswa(); 
@@ -359,7 +359,7 @@
                     return;
                 }
                 sisaWaktuDetik--;
-                localStorage.setItem("asaj_timer_kls4", sisaWaktuDetik);
+                localStorage.setItem("asaj_timer_kls5", sisaWaktuDetik);
                 
                 const menit = Math.floor(sisaWaktuDetik / 60).toString().padStart(2, '0');
                 const detik = (sisaWaktuDetik % 60).toString().padStart(2, '0');
@@ -378,7 +378,7 @@
                 body: JSON.stringify({
                     action: "ambilBankSoal",
                     mata_pelajaran: mapelPilihanSiswa,
-                    id_kelas: "KLS-04"
+                    id_kelas: "KLS-05"
                 })
             })
             .then(res => res.json())
@@ -505,14 +505,14 @@
 
         function pilihJawabanSiswa(opsiPilihan) {
             mapJawabanSiswa[indexSoalAktif] = opsiPilihan;
-            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); 
+            localStorage.setItem("asaj_answers_kls5", JSON.stringify(mapJawabanSiswa)); 
             tampilkanSoalSpesifik(indexSoalAktif); 
             kirimKeSpreadsheetOtomatis("BELUM SELESAI"); 
         }
 
         function pilihJawabanIsian(nilaiTeks) {
             mapJawabanSiswa[indexSoalAktif] = nilaiTeks.trim().toUpperCase();
-            localStorage.setItem("asaj_answers_kls4", JSON.stringify(mapJawabanSiswa)); 
+            localStorage.setItem("asaj_answers_kls5", JSON.stringify(mapJawabanSiswa)); 
             updateWarnaNomorSatuPerSatu(indexSoalAktif);
             kirimKeSpreadsheetOtomatis("BELUM SELESAI"); 
         }
@@ -530,7 +530,7 @@
         }
 
         function kirimKeSpreadsheetOtomatis(statusUjian, callback) {
-            const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+            const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls5"));
             if (!dataSiswa || dataSoalUjian.length === 0) return 0;
 
             let totalSkorSiswa = 0;
@@ -551,7 +551,7 @@
             const payload = {
                 action: "simpanJawabanSiswa",
                 id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA || "-",
-                id_kelas: "KLS-04",
+                id_kelas: "KLS-05",
                 mata_pelajaran: mapelPilihanSiswa,
                 daftar_jawaban: barisJawaban.join(", "), 
                 nilai_akhir: totalSkorSiswa,
@@ -583,7 +583,7 @@
                 matikanKameraSiswa(); 
                 
                 kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
-                    const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+                    const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls5"));
                     document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
                     
                     const displaySkor = document.getElementById("score-display");
