@@ -108,10 +108,14 @@
       { bg: '#F15BB5', shadow: '#C14991', text: '#FFFFFF' }  // Pink
     ];
 
+    // Ambil data otomatis saat halaman selesai dimuat di browser
     window.addEventListener('DOMContentLoaded', () => {
       muatTombolKelas();
     });
 
+    /**
+     * Memanggil API Apps Script menggunakan Fetch API
+     */
     function muatTombolKelas() {
       fetch(`${API_URL}?action=ambilKelas`)
         .then(response => response.json())
@@ -123,6 +127,7 @@
             loader.classList.add('hidden');
             container.classList.remove('hidden');
             
+            // Loop data kelas yang dikirim oleh Spreadsheet
             response.data.forEach((kelas, index) => {
               const warna = paletWarna[index % paletWarna.length];
               
@@ -130,11 +135,12 @@
               tombol.innerText = kelas.nama;
               tombol.className = "btn-3d font-bold py-4 px-2 rounded-2xl text-lg md:text-xl transition-all transform hover:scale-105";
               
+              // Memberikan style warna dinamis dan bayangan 3D
               tombol.style.backgroundColor = warna.bg;
               tombol.style.color = warna.text;
               tombol.style.boxShadow = `0 8px 0 ${warna.shadow}`;
               
-              // Modifikasi Arsitektural: Mengirimkan nama kelas dan ID untuk validasi navigasi
+              // Mengirim parameter id dan nama kelas ke fungsi navigasi
               tombol.onclick = () => prosesNavigasi(kelas.id, kelas.nama);
               
               container.appendChild(tombol);
@@ -150,21 +156,23 @@
     }
 
     /**
-     * Logika Navigasi Teroptimasi (Berdasarkan Pilihan Kelas)
+     * Logika Navigasi Teroptimasi (Hanya mengizinkan akses penuh ke Kelas 4)
      */
     function prosesNavigasi(idKelas, namaKelas) {
-      // Normalisasi teks (menghapus spasi dan mengubah ke huruf kecil, misal: "Kelas 5" menjadi "kelas5")
+      // Normalisasi nama kelas (menghilangkan spasi dan ubah huruf jadi kecil)
       const namaBersih = namaKelas.toLowerCase().replace(/\s+/g, '');
 
-      if (namaBersih.includes('kelas5') || namaBersih.includes('kls5') || idKelas === '5') {
-        // Jika yang diklik adalah Kelas 5, arahkan ke halaman Github Pages Anda
+      // Cek apakah tombol yang diklik adalah Kelas 4 (berdasarkan string nama atau ID)
+      if (namaBersih.includes('kelas4') || namaBersih.includes('kls4') || idKelas === '4') {
+        // Jika Kelas 4, langsung arahkan ke link GitHub Pages Anda
         window.location.href = 'https://sugeng1104.github.io/asaj-ranu1/asaj-kls-04.html';
       } else {
-        // Feedback UX Ramah Anak jika kelas lain belum dikembangkan / diaktifkan
+        // Jika Kelas 5 atau kelas lainnya, munculkan notifikasi penundaan ramah anak
         alert(`Halo! Ujian untuk ${namaKelas} belum dibuka atau sedang dipersiapkan oleh Bapak/Ibu Guru. Hubungi gurumu ya! 😊`);
       }
     }
 
+    // Fungsi Kontrol Tampilan Modal Petunjuk Penggunaan
     function bukaPetunjuk() {
       const modal = document.getElementById('modalPetunjuk');
       modal.classList.remove('hidden');
