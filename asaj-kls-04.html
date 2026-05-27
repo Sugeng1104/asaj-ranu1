@@ -207,7 +207,17 @@
             btn.disabled = true;
             btn.innerText = "Memverifikasi...";
 
-            fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=KLS-04`)
+            // MODIFIKASI TERISOLASI: Mengubah ke POST Payload murni yang aman dari restriksi doGet Apps Script
+            fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({
+                    action: "ambilDataSiswa",
+                    id_kelas: "KLS-04"
+                })
+            })
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success") {
@@ -225,6 +235,8 @@
                         } else {
                             alert("Kombinasi Username atau Token salah!");
                         }
+                    } else {
+                        alert("Gagal memproses data: " + (respon.message || "Eror internal database"));
                     }
                 })
                 .catch(() => alert("Gagal terhubung ke server database."))
@@ -269,7 +281,18 @@
         function muatMasterSoal() {
             const namaSheetTarget = "Master_" + mapelPilihanSiswa;
 
-            fetch(`${API_URL}?action=ambilBankSoal&mata_pelajaran=${encodeURIComponent(mapelPilihanSiswa)}&id_kelas=KLS-04`)
+            // MODIFIKASI TERISOLASI: Menyelaraskan pembacaan bank soal menggunakan rute POST Payload yang aman
+            fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({
+                    action: "ambilBankSoal",
+                    mata_pelajaran: mapelPilihanSiswa,
+                    id_kelas: "KLS-04"
+                })
+            })
                 .then(res => res.json())
                 .then(respon => {
                     if (respon.status === "success" && respon.data && respon.data.length > 0) {
@@ -447,10 +470,8 @@
                 status_ujian: statusUjian
             };
 
-            // Perbaikan krusial pada metode POST ke Google App Script
             fetch(API_URL, {
                 method: "POST",
-                mode: "no-cors", // Menghindari eror kebijakan CORS browser
                 headers: {
                     "Content-Type": "text/plain"
                 },
@@ -472,7 +493,6 @@
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
                 clearInterval(intervalTimer);
                 
-                // Panggil penyimpanan akhir, lalu tampilkan modal rekap setelah sukses terkirim
                 kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
                     const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
                     document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
