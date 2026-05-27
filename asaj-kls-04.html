@@ -19,10 +19,9 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Style Tambahan untuk memaksa video berbentuk kotak di header */
         #container-video-pengawas video {
             aspect-ratio: 1 / 1;
-            object-cover: cover;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -75,12 +74,12 @@
                         <div id="container-video-pengawas" class="w-28 h-28 bg-white rounded-2xl p-1 border border-slate-200 shadow-lg overflow-hidden relative self-center sm:self-start">
                             <div class="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-center gap-1.5 z-10 bg-white/70 backdrop-blur-sm py-0.5 rounded-full px-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengawas</span>
+                                <span id="label-status-kamera" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengawas</span>
                             </div>
                             <div class="w-full h-full bg-slate-900 rounded-xl overflow-hidden shadow-inner relative border border-slate-100">
-                                <div id="webcam-siswa" class="w-full h-full object-cover scale-x-[-1] rounded-xl overflow-hidden"></div>
+                                <div id="webcam-siswa" class="w-full h-full scale-x-[-1] rounded-xl overflow-hidden flex items-center justify-center"></div>
                                 <div id="status-kamera-error" class="hidden absolute inset-0 bg-slate-900 text-slate-200 text-[10px] font-bold p-2 flex flex-col items-center justify-center text-center gap-1">
-                                    <span class="text-lg">⚠️</span> Aktifkan Kamera!
+                                    <span class="text-lg">⚠️</span> Izinkan Kamera Browser!
                                 </div>
                             </div>
                         </div>
@@ -198,9 +197,9 @@
         let intervalTimer = null;
         let mapelPilihanSiswa = "";
         
-        // Definisikan variabel instans SDK Agora 
         let agoraClient = null;
         let localTracks = { videoTrack: null };
+        let localStreamHTML = null; 
 
         document.addEventListener("DOMContentLoaded", function() {
             const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
@@ -209,7 +208,7 @@
             if (sesi && mapelSaved) { 
                 mapelPilihanSiswa = mapelSaved.toString().toUpperCase().trim();
                 const waktuLokal = localStorage.getItem("asaj_timer_kls4");
-                if (waktuLokal) { sisaWaktuDetik = parseInt(wokal); }
+                if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
                 
                 const mapLokal = localStorage.getItem("asaj_answers_kls4");
                 if (mapLokal) { mapJawabanSiswa = JSON.parse(mapLokal); }
@@ -218,49 +217,70 @@
             }
         });
 
+        // Fungsi membuat ID Angka Murni yang valid untuk parameter UID Agora SDK
+        function buatAngkaUidDariString(str) {
+            let hash = 0;
+            if (str.length === 0) return Math.floor(Math.random() * 100000);
+            for (let i = 0; i < str.length; i++) {
+                const chr = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + chr;
+                hash |= 0;
+            }
+            return Math.abs(hash) || Math.floor(Math.random() * 100000);
+        }
+
         async function aktifkanKameraSiswa() {
             const errorView = document.getElementById("status-kamera-error");
+            const labelStatus = document.getElementById("label-status-kamera");
+            const wadahVideo = document.getElementById("webcam-siswa");
+            
             const AGORA_APP_ID = "c13ddbf6e85a432494c0257b15418807"; 
             const CHANNEL_NAME = "asaj_kelas_4_ranu1"; 
             
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-            // Mengubah ID Siswa alfa-numerik menjadi angka unik murni untuk parameter UID Agora
-            const UID_SISWA = dataSiswa ? parseInt(dataSiswa.id_siswa.replace(/\D/g, "")) || Math.floor(Math.random() * 10000) : Math.floor(Math.random() * 10000);
+            const rawId = dataSiswa ? (dataSiswa.id_siswa || dataSiswa.ID_SISWA || "") : "";
+            const UID_SISWA = buatAngkaUidDariString(rawId.toString());
 
             try {
                 // Inisialisasi client Agora RTC
                 agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
                 
-                // Masuk ke dalam server streaming channel
                 await agoraClient.join(AGORA_APP_ID, CHANNEL_NAME, null, UID_SISWA);
 
-                // Mengambil video kamera dengan parameter hemat resolusi agar lancar di internet sekolah
                 localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack({
-                    encoderConfig: {
-                        width: 200,
-                        height: 200,
-                        frameRate: 12
-                    }
+                    encoderConfig: { width: 160, height: 160, frameRate: 10 }
                 });
 
-                // Tampilkan video di frame kotak lokal siswa
+                wadahVideo.innerHTML = ""; 
                 localTracks.videoTrack.play("webcam-siswa");
                 errorView.classList.add("hidden");
 
-                // Mengirimkan stream video ke channel agar dapat dipantau halaman proktor
                 await agoraClient.publish([localTracks.videoTrack]);
-                console.log("Kamera pengawas Agora aktif. UID: " + UID_SISWA);
-
-                // Event listener jika kamera diinterupsi oleh sistem perangkat keras browser
-                localTracks.videoTrack.on("track-ended", () => {
-                    alert("Peringatan keras! Kamera Anda terputus atau dimatikan. Hubungi pengawas ruangan.");
-                    errorView.classList.remove("hidden");
-                });
+                labelStatus.innerText = "ONLINE";
+                console.log("Kamera Agora streaming aktif. UID: " + UID_SISWA);
 
             } catch (error) {
-                console.error("Gagal akses kamera via Agora: ", error);
-                errorView.classList.remove("hidden");
-                alert("Aplikasi Ujian membutuhkan izin kamera! Silakan reload halaman dan pilih 'Allow/Izinkan Kamera'.");
+                console.warn("Agora Server terhambat, mengaktifkan Fallback Kamera Lokal...", error);
+                
+                // FALLBACK MODE: Jika server Agora menolak/eror, aktifkan kamera lokal murni HTML5 agar siswa tetap bisa ujian
+                try {
+                    const streamLokal = await navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 160 } });
+                    localStreamHTML = streamLokal;
+                    
+                    wadahVideo.innerHTML = "";
+                    const elemenVideoMurni = document.createElement("video");
+                    elemenVideoMurni.srcObject = streamLokal;
+                    elemenVideoMurni.autoplay = true;
+                    elemenVideoMurni.playsInline = true;
+                    elemenVideoMurni.className = "w-full h-full object-cover rounded-xl";
+                    
+                    wadahVideo.appendChild(elemenVideoMurni);
+                    errorView.classList.add("hidden");
+                    labelStatus.innerText = "LOKAL";
+                } catch (errLokal) {
+                    console.error("Kamera sepenuhnya diblokir browser:", errLokal);
+                    errorView.classList.remove("hidden");
+                }
             }
         }
 
@@ -271,12 +291,15 @@
                     localTracks.videoTrack.close();
                     localTracks.videoTrack = null;
                 }
+                if (localStreamHTML) {
+                    localStreamHTML.getTracks().forEach(track => track.stop());
+                }
                 if (agoraClient) {
                     await agoraClient.leave();
-                    console.log("Koneksi kamera streaming diputus secara aman.");
                 }
+                console.log("Koneksi kamera dimatikan aman.");
             } catch (e) {
-                console.error("Gagal mematikan service kamera: ", e);
+                console.error("Gagal menonaktifkan kamera: ", e);
             }
         }
 
@@ -297,13 +320,8 @@
 
             fetch(API_URL, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: JSON.stringify({
-                    action: "ambilDataSiswa",
-                    id_kelas: "KLS-04"
-                })
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({ action: "ambilDataSiswa", id_kelas: "KLS-04" })
             })
                 .then(res => res.json())
                 .then(respon => {
@@ -327,14 +345,8 @@
                             
                             fetch(API_URL, {
                                 method: "POST",
-                                headers: {
-                                    "Content-Type": "text/plain"
-                                },
-                                body: JSON.stringify({
-                                    action: "ambilBankSoal",
-                                    mata_pelajaran: mapelPilihanSiswa,
-                                    id_kelas: "KLS-04"
-                                })
+                                headers: { "Content-Type": "text/plain" },
+                                body: JSON.stringify({ action: "ambilBankSoal", mata_pelajaran: mapelPilihanSiswa, id_kelas: "KLS-04" })
                             })
                             .then(soalRes => soalRes.json())
                             .then(responSoal => {
@@ -343,11 +355,11 @@
                                     localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
                                     bukaHalamanUjian(cocok);
                                 } else {
-                                    alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
+                                    alert(`Maaf, Berkas butir soal ${mapelPilihanSiswa} belum tersedia.`);
                                 }
                             })
                             .catch(() => {
-                                alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
+                                alert(`Maaf, Berkas butir soal ${mapelPilihanSiswa} belum tersedia.`);
                             })
                             .finally(() => {
                                 btn.disabled = false;
@@ -382,7 +394,7 @@
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
 
-            aktifkanKameraSiswa(); // Trigger kamera menyala saat halaman ujian dibuka
+            aktifkanKameraSiswa(); 
             jalankanTimerUjian();
             muatMasterSoal();
         }
@@ -410,14 +422,8 @@
 
             fetch(API_URL, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "text/plain"
-                },
-                body: JSON.stringify({
-                    action: "ambilBankSoal",
-                    mata_pelajaran: mapelPilihanSiswa,
-                    id_kelas: "KLS-04"
-                })
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({ action: "ambilBankSoal", mata_pelajaran: mapelPilihanSiswa, id_kelas: "KLS-04" })
             })
                 .then(res => res.json())
                 .then(respon => {
