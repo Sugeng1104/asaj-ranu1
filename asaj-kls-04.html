@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .emas-menyala {
@@ -18,7 +18,6 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        /* Style Tambahan untuk memaksa video berbentuk kotak di header */
         #container-video-pengawas video {
             aspect-ratio: 1 / 1;
             object-fit: cover;
@@ -267,75 +266,72 @@
                     "Content-Type": "text/plain"
                 },
                 body: JSON.stringify({
-                    action: "ambilDataSiswa",
-                    id_kelas: "KLS-04"
+                    action: "prosesLoginSiswa",
+                    id_kelas: "KLS-04",
+                    mata_pelajaran: mapel,
+                    username: user,
+                    token: token
                 })
             })
-                .then(res => res.json())
-                .then(respon => {
-                    if (respon.status === "success") {
-                        const cocok = respon.data.find(s => {
-                            const dbUser = (s.username || s.USERNAME || '').toString().trim().toLowerCase();
-                            const dbToken = (s.token || s.TOKEN || '').toString().trim();
-                            return dbUser === user.toLowerCase() && dbToken === token;
-                        });
-                        
-                        if (cocok) {
-                            const statusSiswa = (cocok.status || cocok.STATUS || '').toString().trim().toLowerCase();
-                            if (statusSiswa !== "aktif") {
-                                alert("Gagal Login: Status akun Anda tidak Aktif!");
-                                btn.disabled = false;
-                                btn.innerText = "Masuk Ruang Ujian";
-                                return;
-                            }
-
-                            mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
-                            
-                            fetch(API_URL, {
-                                method: "POST",
-                                headers: {
-                                    "Content-Type": "text/plain"
-                                },
-                                body: JSON.stringify({
-                                    action: "ambilBankSoal",
-                                    mata_pelajaran: mapelPilihanSiswa,
-                                    id_kelas: "KLS-04"
-                                })
-                            })
-                            .then(soalRes => soalRes.json())
-                            .then(responSoal => {
-                                if (responSoal.status === "success" && responSoal.data && responSoal.data.length > 0) {
-                                    localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
-                                    localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
-                                    bukaHalamanUjian(cocok);
-                                } else {
-                                    alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
-                                }
-                            })
-                            .catch(() => {
-                                alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
-                            })
-                            .finally(() => {
-                                btn.disabled = false;
-                                btn.innerText = "Masuk Ruang Ujian";
-                            });
-
-                        } else {
-                            alert("Kombinasi Username atau Token salah!");
-                            btn.disabled = false;
-                            btn.innerText = "Masuk Ruang Ujian";
-                        }
-                    } else {
-                        alert("Gagal memproses data: " + (respon.message || "Eror internal database"));
-                        btn.disabled = false;
-                        btn.innerText = "Masuk Ruang Ujian";
-                    }
-                })
-                .catch(() => {
-                    alert("Gagal terhubung ke server database.");
+            .then(res => res.json())
+            .then(respon => {
+                if (respon.status === "mapel_nonaktif") {
+                    alert(`Mohon maaf mata pelajaran ${mapel} belum di mulai.`);
                     btn.disabled = false;
                     btn.innerText = "Masuk Ruang Ujian";
-                });
+                    return;
+                }
+
+                if (respon.status === "gagal_login") {
+                    alert(respon.message);
+                    btn.disabled = false;
+                    btn.innerText = "Masuk Ruang Ujian";
+                    return;
+                }
+
+                if (respon.status === "success") {
+                    const dataSiswaTerverifikasi = respon.data_siswa;
+                    mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
+                    
+                    fetch(API_URL, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "text/plain"
+                        },
+                        body: JSON.stringify({
+                            action: "ambilBankSoal",
+                            mata_pelajaran: mapelPilihanSiswa,
+                            id_kelas: "KLS-04"
+                        })
+                    })
+                    .then(soalRes => soalRes.json())
+                    .then(responSoal => {
+                        if (responSoal.status === "success" && responSoal.data && responSoal.data.length > 0) {
+                            localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(dataSiswaTerverifikasi));
+                            localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
+                            bukaHalamanUjian(dataSiswaTerverifikasi);
+                        } else {
+                            alert(`Maaf, berkas butir soal untuk ${mapelPilihanSiswa} tidak ditemukan di master.`);
+                        }
+                    })
+                    .catch(() => {
+                        alert(`Gagal mengambil berkas soal untuk ${mapelPilihanSiswa}.`);
+                    })
+                    .finally(() => {
+                        btn.disabled = false;
+                        btn.innerText = "Masuk Ruang Ujian";
+                    });
+                } else {
+                    alert("Terjadi kesalahan sistem: " + (respon.message || "Unknown Error"));
+                    btn.disabled = false;
+                    btn.innerText = "Masuk Ruang Ujian";
+                }
+            })
+            .catch(() => {
+                alert("Gagal terhubung ke server database. Periksa koneksi internet.");
+                btn.disabled = false;
+                btn.innerText = "Masuk Ruang Ujian";
+            });
         }
 
         function bukaHalamanUjian(siswa) {
@@ -346,7 +342,7 @@
             document.getElementById("display-nama").innerText = siswa.nama_lengkap || siswa.NAMA_LENGKAP || "Siswa";
             document.getElementById("display-idsiswa").innerText = siswa.id_siswa || siswa.ID_SISWA || "-";
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
-            document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
+            document.getElementById("display-status").innerText = "AKTIF";
 
             aktifkanKameraSiswa(); 
             jalankanTimerUjian();
@@ -385,39 +381,39 @@
                     id_kelas: "KLS-04"
                 })
             })
-                .then(res => res.json())
-                .then(respon => {
-                    if (respon.status === "success" && respon.data && respon.data.length > 0) {
-                        
-                        dataSoalUjian = respon.data.map(item => {
-                            return {
-                                nomor_soal: item.nomor_soal || item.NOMOR_SOAL || 1,
-                                mata_pelajaran: mapelPilihanSiswa,
-                                jenis_soal: (item.jenis_soal || item.JENIS_SOAL || "PILIHAN GANDA").toString().toUpperCase().trim(),
-                                pertanyaan: item.pertanyaan || item.PERTANYAAN || "",
-                                pilihan_a: item.pilihan_a || item.PILIHAN_A || "",
-                                pilihan_b: item.pilihan_b || item.PILIHAN_B || "",
-                                pilihan_c: item.pilihan_c || item.PILIHAN_C || "",
-                                pilihan_d: item.pilihan_d || item.PILIHAN_D || "",
-                                kunci_jawaban: item.kunci_jawaban || item.KUNCI_JAWABAN || "",
-                                bobot_nilai: item.bobot_nilai || item.BOBOT_NILAI || 0,
-                                gambar: item.gambar || item.GAMBAR || ""
-                            };
-                        });
+            .then(res => res.json())
+            .then(respon => {
+                if (respon.status === "success" && respon.data && respon.data.length > 0) {
+                    
+                    dataSoalUjian = respon.data.map(item => {
+                        return {
+                            nomor_soal: item.nomor_soal || item.NOMOR_SOAL || 1,
+                            mata_pelajaran: mapelPilihanSiswa,
+                            jenis_soal: (item.jenis_soal || item.JENIS_SOAL || "PILIHAN GANDA").toString().toUpperCase().trim(),
+                            pertanyaan: item.pertanyaan || item.PERTANYAAN || "",
+                            pilihan_a: item.pilihan_a || item.PILIHAN_A || "",
+                            pilihan_b: item.pilihan_b || item.PILIHAN_B || "",
+                            pilihan_c: item.pilihan_c || item.PILIHAN_C || "",
+                            pilihan_d: item.pilihan_d || item.PILIHAN_D || "",
+                            kunci_jawaban: item.kunci_jawaban || item.KUNCI_JAWABAN || "",
+                            bobot_nilai: item.bobot_nilai || item.BOBOT_NILAI || 0,
+                            gambar: item.gambar || item.GAMBAR || ""
+                        };
+                    });
 
-                        dataSoalUjian.sort((a, b) => parseInt(a.nomor_soal) - parseInt(b.nomor_soal));
-                        document.getElementById("loading-soal").classList.add("hidden");
-                        document.getElementById("box-soal-inti").classList.remove("hidden");
-                        
-                        renderGridNomor();
-                        tampilkanSoalSpesifik(indexSoalAktif);
-                    } else {
-                        document.getElementById("loading-soal").innerText = `Tidak ada butir soal di dalam sheet ${namaSheetTarget}.`;
-                    }
-                })
-                .catch(() => {
-                    document.getElementById("loading-soal").innerHTML = `<div class="text-red-500 font-bold">Gagal mengunduh berkas soal dari sheet ${namaSheetTarget}. Periksa nama tab sheet Anda.</div>`;
-                });
+                    dataSoalUjian.sort((a, b) => parseInt(a.nomor_soal) - parseInt(b.nomor_soal));
+                    document.getElementById("loading-soal").classList.add("hidden");
+                    document.getElementById("box-soal-inti").classList.remove("hidden");
+                    
+                    renderGridNomor();
+                    tampilkanSoalSpesifik(indexSoalAktif);
+                } else {
+                    document.getElementById("loading-soal").innerText = `Tidak ada butir soal di dalam sheet ${namaSheetTarget}.`;
+                }
+            })
+            .catch(() => {
+                document.getElementById("loading-soal").innerHTML = `<div class="text-red-500 font-bold">Gagal mengunduh berkas soal dari sheet ${namaSheetTarget}. Periksa nama tab sheet Anda.</div>`;
+            });
         }
 
         function renderGridNomor() {
