@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitor Pengawas - ASAJ Kelas 4</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 w-full px-8 py-5 shadow-sm">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">Ruang Monitor Kamera</h1>
+                <p class="text-sm text-slate-400 font-medium mt-0.5">ASAJ Kelas 4 - SDN Ranuklindungan I</p>
+            </div>
+            <div class="bg-blue-50 border border-blue-100 px-5 py-2 rounded-2xl flex items-center gap-3">
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+                <p id="status-koneksi" class="text-xs font-bold text-blue-700 uppercase tracking-wider">Menghubungkan Server...</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl w-full mx-auto p-8 flex-grow">
+        <div id="grid-cctv-peserta" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            </div>
+        
+        <div id="no-siswa" class="text-center py-24 text-slate-400 font-medium">
+            Belum ada peserta ujian yang aktif membagikan kamera...
+        </div>
+    </main>
+
+    <script>
+        const AGORA_APP_ID = "c13ddbf6e85a432494c0257b15418807"; // App ID Terpasang
+        const CHANNEL_NAME = "asaj_kelas_4_ranu1"; 
+        
+        let proktorClient = null;
+
+        async function inisialisasiMonitorProktor() {
+            try {
+                proktorClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
+                
+                proktorClient.on("user-published", async (user, mediaType) => {
+                    await proktorClient.subscribe(user, mediaType);
+                    
+                    if (mediaType === "video") {
+                        document.getElementById("no-siswa").classList.add("hidden");
+                        buatKotakCctvSiswa(user);
+                    }
+                });
+
+                proktorClient.on("user-unpublished", user => {
+                    hapusKotakCctvSiswa(user);
+                });
+                proktorClient.on("user-left", user => {
+                    hapusKotakCctvSiswa(user);
+                });
+
+                await proktorClient.join(AGORA_APP_ID, CHANNEL_NAME, null, null);
+                document.getElementById("status-koneksi").innerText = "Sistem Monitor Aktif";
+
+            } catch (error) {
+                console.error("Gagal memuat monitor proktor:", error);
+                document.getElementById("status-koneksi").innerText = "Koneksi Gagal";
+            }
+        }
+
+        function buatKotakCctvSiswa(user) {
+            const gridWrapper = document.getElementById("grid-cctv-peserta");
+            
+            let kotakSiswa = document.getElementById(`cctv-box-${user.uid}`);
+            if (!kotakSiswa) {
+                kotakSiswa = document.createElement("div");
+                kotakSiswa.id = `cctv-box-${user.uid}`;
+                kotakSiswa.className = "bg-white rounded-2xl border border-slate-200 p-2 shadow-sm flex flex-col gap-2 relative overflow-hidden h-48 animate-fade-in";
+                
+                const videoTargetDiv = document.createElement("div");
+                videoTargetDiv.id = `video-player-${user.uid}`;
+                videoTargetDiv.className = "w-full h-36 bg-slate-900 rounded-xl overflow-hidden scale-x-[-1]";
+                
+                const labelSiswa = document.createElement("div");
+                labelSiswa.className = "text-center text-xs font-bold text-slate-600 truncate px-1";
+                labelSiswa.innerText = `ID Siswa: ${user.uid}`;
+
+                kotakSiswa.appendChild(videoTargetDiv);
+                kotakSiswa.appendChild(labelSiswa);
+                gridWrapper.appendChild(kotakSiswa);
+            }
+
+            user.videoTrack.play(`video-player-${user.uid}`);
+        }
+
+        function hapusKotakCctvSiswa(user) {
+            const kotakSiswa = document.getElementById(`cctv-box-${user.uid}`);
+            if (kotakSiswa) {
+                kotakSiswa.remove();
+            }
+            
+            const gridWrapper = document.getElementById("grid-cctv-peserta");
+            if (gridWrapper.children.length === 0) {
+                document.getElementById("no-siswa").classList.remove("hidden");
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", inisialisasiMonitorProktor);
+    </script>
+</body>
+</html>
