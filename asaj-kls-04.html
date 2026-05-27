@@ -468,7 +468,7 @@
             const imgEl = document.getElementById("img-soal");
             
             if (itemSoal.gambar && itemSoal.gambar.toString().trim() !== "") {
-                imgEl.src = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/img/kls-04/${itemSoal.gambar.toString().trim()}`;
+                imgEl.src = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${GITHUB_REPO}/main/assets/img/${itemSoal.gambar.toString().trim()}`;
                 wadahImg.classList.remove("hidden");
                 wadahImg.classList.add("flex");
             } else {
