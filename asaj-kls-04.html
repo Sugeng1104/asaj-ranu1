@@ -207,7 +207,6 @@
             btn.disabled = true;
             btn.innerText = "Memverifikasi...";
 
-            // MODIFIKASI TERISOLASI: Mengubah ke POST Payload murni yang aman dari restriksi doGet Apps Script
             fetch(API_URL, {
                 method: "POST",
                 headers: {
@@ -228,19 +227,62 @@
                         });
                         
                         if (cocok) {
+                            // Validasi kolom status: Wajib bernilai "Aktif"
+                            const statusSiswa = (cocok.status || cocok.STATUS || '').toString().trim().toLowerCase();
+                            if (statusSiswa !== "aktif") {
+                                alert("Gagal Login: Status akun Anda tidak Aktif!");
+                                btn.disabled = false;
+                                btn.innerText = "Masuk Ruang Ujian";
+                                return;
+                            }
+
                             mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
-                            localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
-                            localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
-                            bukaHalamanUjian(cocok);
+                            
+                            // Cek ketersediaan butir soal ke database sheet sebelum mengizinkan masuk halaman ujian
+                            fetch(API_URL, {
+                                method: "POST",
+                                headers: {
+                                    "Content-Type": "text/plain"
+                                },
+                                body: JSON.stringify({
+                                    action: "ambilBankSoal",
+                                    mata_pelajaran: mapelPilihanSiswa,
+                                    id_kelas: "KLS-04"
+                                })
+                            })
+                            .then(soalRes => soalRes.json())
+                            .then(responSoal => {
+                                if (responSoal.status === "success" && responSoal.data && responSoal.data.length > 0) {
+                                    // Jika soal tersedia, simpan sesi dan buka ruang ujian
+                                    localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
+                                    localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
+                                    bukaHalamanUjian(cocok);
+                                } else {
+                                    // Jika data kosong, tampilkan topup peringatan sesuai request Anda
+                                    alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
+                                }
+                            })
+                            .catch(() => {
+                                alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
+                            })
+                            .finally(() => {
+                                btn.disabled = false;
+                                btn.innerText = "Masuk Ruang Ujian";
+                            });
+
                         } else {
                             alert("Kombinasi Username atau Token salah!");
+                            btn.disabled = false;
+                            btn.innerText = "Masuk Ruang Ujian";
                         }
                     } else {
                         alert("Gagal memproses data: " + (respon.message || "Eror internal database"));
+                        btn.disabled = false;
+                        btn.innerText = "Masuk Ruang Ujian";
                     }
                 })
-                .catch(() => alert("Gagal terhubung ke server database."))
-                .finally(() => {
+                .catch(() => {
+                    alert("Gagal terhubung ke server database.");
                     btn.disabled = false;
                     btn.innerText = "Masuk Ruang Ujian";
                 });
@@ -281,7 +323,6 @@
         function muatMasterSoal() {
             const namaSheetTarget = "Master_" + mapelPilihanSiswa;
 
-            // MODIFIKASI TERISOLASI: Menyelaraskan pembacaan bank soal menggunakan rute POST Payload yang aman
             fetch(API_URL, {
                 method: "POST",
                 headers: {
