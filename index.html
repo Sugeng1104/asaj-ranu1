@@ -63,7 +63,7 @@
       </div>
 
       <div id="container-tombol-kelas" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 pt-2 pb-4 hidden">
-        </div>
+      </div>
     </section>
 
     <footer class="flex flex-col items-center justify-center">
@@ -108,14 +108,10 @@
       { bg: '#F15BB5', shadow: '#C14991', text: '#FFFFFF' }  // Pink
     ];
 
-    // Ambil data otomatis saat halaman selesai dimuat di browser
     window.addEventListener('DOMContentLoaded', () => {
       muatTombolKelas();
     });
 
-    /**
-     * Memanggil API Apps Script menggunakan Fetch API
-     */
     function muatTombolKelas() {
       fetch(`${API_URL}?action=ambilKelas`)
         .then(response => response.json())
@@ -127,7 +123,6 @@
             loader.classList.add('hidden');
             container.classList.remove('hidden');
             
-            // Loop data kelas yang dikirim oleh Spreadsheet
             response.data.forEach((kelas, index) => {
               const warna = paletWarna[index % paletWarna.length];
               
@@ -135,13 +130,12 @@
               tombol.innerText = kelas.nama;
               tombol.className = "btn-3d font-bold py-4 px-2 rounded-2xl text-lg md:text-xl transition-all transform hover:scale-105";
               
-              // Memberikan style warna dinamis dan bayangan 3D
               tombol.style.backgroundColor = warna.bg;
               tombol.style.color = warna.text;
               tombol.style.boxShadow = `0 8px 0 ${warna.shadow}`;
               
-              // Mengarahkan ke halaman login kelas terkait
-              tombol.onclick = () => prosesNavigasi(kelas.id);
+              // Modifikasi Arsitektural: Mengirimkan nama kelas dan ID untuk validasi navigasi
+              tombol.onclick = () => prosesNavigasi(kelas.id, kelas.nama);
               
               container.appendChild(tombol);
             });
@@ -156,13 +150,21 @@
     }
 
     /**
-     * Logika Navigasi: Mengarahkan siswa ke halaman login kelas
+     * Logika Navigasi Teroptimasi (Berdasarkan Pilihan Kelas)
      */
-    function prosesNavigasi(idKelas) {
-      window.location.href = `https://sugeng1104.github.io/asaj-ranu1/asaj-kls-04.html`;
+    function prosesNavigasi(idKelas, namaKelas) {
+      // Normalisasi teks (menghapus spasi dan mengubah ke huruf kecil, misal: "Kelas 5" menjadi "kelas5")
+      const namaBersih = namaKelas.toLowerCase().replace(/\s+/g, '');
+
+      if (namaBersih.includes('kelas5') || namaBersih.includes('kls5') || idKelas === '5') {
+        // Jika yang diklik adalah Kelas 5, arahkan ke halaman Github Pages Anda
+        window.location.href = 'https://sugeng1104.github.io/asaj-ranu1/asaj-kls-04.html';
+      } else {
+        // Feedback UX Ramah Anak jika kelas lain belum dikembangkan / diaktifkan
+        alert(`Halo! Ujian untuk ${namaKelas} belum dibuka atau sedang dipersiapkan oleh Bapak/Ibu Guru. Hubungi gurumu ya! 😊`);
+      }
     }
 
-    // Fungsi Kontrol Tampilan Modal Petunjuk Penggunaan
     function bukaPetunjuk() {
       const modal = document.getElementById('modalPetunjuk');
       modal.classList.remove('hidden');
