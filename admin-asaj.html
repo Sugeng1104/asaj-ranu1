@@ -108,7 +108,7 @@
 
     <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
         <li class="nav-item">
-            <button class="nav-link active" id="peserta-tab" data-bs-toggle="tab" data-bs-target="#peserta-panel" type="button"><i class="fa-solid fa-users text-warning"></i> Modul Peserta</button>
+            <button class="nav-link active" id="peserta-tab" data-bs-toggle="tab" data-bs-target="#peserta-panel" type="button" onclick="muatDataSiswaEksisting()"><i class="fa-solid fa-users text-warning"></i> Modul Peserta</button>
         </li>
         <li class="nav-item">
             <button class="nav-link" id="soal-tab" data-bs-toggle="tab" data-bs-target="#soal-panel" type="button" onclick="muatBankSoal()"><i class="fa-solid fa-book text-primary"></i> Bank Soal</button>
@@ -139,7 +139,10 @@
                 </div>
                 <div class="col-md-8">
                     <div class="card p-4 mb-4">
-                        <h4 class="mb-3 text-white text-lg font-bold"><i class="fa-solid fa-table-list text-blue-400"></i> Daftar Siswa Terdaftar</h4>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                           <h4 class="mb-0 text-white text-lg font-bold"><i class="fa-solid fa-table-list text-blue-400"></i> Daftar Siswa Terdaftar</h4>
+                           <button class="btn btn-sm btn-outline-info text-xs font-bold px-3 py-1" onclick="muatDataSiswaEksisting()">🔄 Segarkan Data</button>
+                        </div>
                         <div class="table-responsive">
                             <table class="table table-dark table-striped table-bordered align-middle small mb-0">
                                 <thead>
@@ -344,6 +347,7 @@
     let modeForm = 'LOGIN'; 
     let kelasAktifGlobal = {};
     let targetUploadGambar = { idSoal: '', sheetName: '' };
+    let dataSiswaMassalTerbaca = [];
 
     window.addEventListener('DOMContentLoaded', () => {
         const sesiSimpanan = localStorage.getItem('asaj_admin_session');
@@ -470,16 +474,50 @@
         }
     }
 
+    // --- FUNGSI UTAMA PENARIK DATA SISWA UNTUK TABEL ADMIN ---
+    function muatDataSiswaEksisting() {
+      const tbody = document.getElementById('tabelPesertaBody');
+      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-info"><i class="fa-solid fa-spinner animate-spin"></i> Menghubungi Cloud Database...</td></tr>`;
+
+      fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+        .then(res => res.json())
+        .then(res => {
+          tbody.innerHTML = "";
+          if (res.status === 'success' && res.data && res.data.length > 0) {
+            res.data.forEach(siswa => {
+              let uid = siswa.id_siswa || siswa.ID_SISWA || '-';
+              let nama = siswa.nama_lengkap || siswa.NAMA_LENGKAP || '-';
+              let user = siswa.username || siswa.USERNAME || '-';
+              let pin = siswa.token || siswa.TOKEN || '-';
+              let status = siswa.status || siswa.STATUS || 'AKTIF';
+
+              tbody.innerHTML += `
+                <tr>
+                  <td><code>${uid}</code></td>
+                  <td class="fw-bold text-white">${nama}</td>
+                  <td><span class="badge bg-secondary">${user}</span></td>
+                  <td><strong class="text-warning">${pin}</strong></td>
+                  <td><span class="badge ${status === 'AKTIF' ? 'bg-success' : 'bg-danger'}">${status}</span></td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Tidak ada siswa yang terdaftar di ${kelasAktifGlobal.nama}. Silakan impor data baru sebelah kiri!</td></tr>`;
+          }
+        })
+        .catch(() => {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">⚠️ Gagal memuat data dari cloud. Periksa koneksi internet Anda atau Deploy ulang Apps Script.</td></tr>`;
+        });
+    }
+
     function cekSaklarMapelAktif() {
       const displayStatus = document.getElementById('txtMapelAktifSekarang');
+      displayStatus.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin mr-1"></i> Memeriksa server...`;
       
-      fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify({ action: 'getMapelAktif', id_kelas: kelasAktifGlobal.id })
-      })
+      fetch(`${API_URL}?action=cekSesiSiswa&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
       .then(res => res.json())
       .then(data => {
-        if(data.mapel_aktif && data.mapel_aktif.trim() !== "") {
+        if(data.status === "success" && data.mapel_aktif && data.mapel_aktif.trim() !== "") {
           displayStatus.innerHTML = `<i class="fa-solid fa-circle text-success me-1"></i> ${data.mapel_aktif.toUpperCase()}`;
           document.getElementById('saklarMapelPilihan').value = data.mapel_aktif.toUpperCase();
         } else {
@@ -494,7 +532,6 @@
     function setelMapelAktifServer() {
       const mapelPilihan = document.getElementById('saklarMapelPilihan').value;
       if(!mapelPilihan) return alert("Pilih mata pelajaran terlebih dahulu!");
-      
       if(!confirm(`Apakah Anda yakin ingin mengaktifkan ujian ${mapelPilihan} untuk ${kelasAktifGlobal.nama}?`)) return;
       
       document.getElementById('loader-halaman').classList.remove('hidden');
@@ -519,8 +556,6 @@
         document.getElementById('loader-halaman').classList.add('hidden');
       });
     }
-
-    let dataSiswaMassalTerbaca = [];
 
     function bacaExcelPeserta() {
         const fileInput = document.getElementById('excelPesertaInput');
@@ -549,319 +584,221 @@
                         <td class="fw-bold">${siswa.nama_lengkap.toString().toUpperCase()}</td>
                         <td>[Otomatis]</td>
                         <td>[Otomatis]</td>
-                        <td><span class="badge bg-secondary">PREREGISTER</span></td>
+                        <td><span class="badge bg-warning text-dark">Draf Impor</span></td>
                     </tr>`;
                 });
-                
                 document.getElementById('btnSimpanPeserta').disabled = false;
-                alert(`Berhasil membaca ${sheetJson.length} calon peserta dari excel. Silahkan klik 'SIMPAN KE SPREADSHEET'.`);
             } catch(err) {
-                alert("Gagal memproses berkas excel: " + err.toString());
+                alert("Gagal membaca berkas Excel: " + err.toString());
             }
         };
         reader.readAsArrayBuffer(file);
     }
 
     function kirimPesertaMassal() {
-        if(dataSiswaMassalTerbaca.length === 0) return;
-        if(!confirm(`Simpan ${dataSiswaMassalTerbaca.length} peserta ke server?`)) return;
-        
-        document.getElementById('loader-halaman').classList.remove('hidden');
-        
-        fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'simpanSiswaMassal',
-                id_kelas: kelasAktifGlobal.id,
-                data_siswa: dataSiswaMassalTerbaca
-            })
-        })
-        .then(res => res.json())
-        .then(res => {
-            if(res.status === 'success') {
-                alert(res.message);
-                document.getElementById('excelPesertaInput').value = "";
-                document.getElementById('btnSimpanPeserta').disabled = true;
-                muatDataSiswaEksisting();
-            } else {
-                alert("Gagal menyimpan: " + res.message);
-            }
-        })
-        .catch(() => alert("Koneksi cloud bermasalah."))
-        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
-    }
+      if(dataSiswaMassalTerbaca.length === 0) return;
+      if(!confirm(`Simpan ${dataSiswaMassalTerbaca.length} siswa ke cloud?`)) return;
 
-    function muatDataSiswaEksisting() {
-        const tbody = document.getElementById('tabelPesertaBody');
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-slate-300"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Memuat data siswa...</td></tr>`;
-        
-        fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
-        .then(res => res.json())
-        .then(res => {
-            if(res.status === 'success' && res.data.length > 0) {
-                tbody.innerHTML = "";
-                res.data.forEach(siswa => {
-                    tbody.innerHTML += `
-                    <tr>
-                        <td><code>${siswa.id_siswa}</code></td>
-                        <td class="font-bold text-slate-200">${siswa.nama_lengkap}</td>
-                        <td><mark class="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-cyan-400 text-xs">${siswa.username}</mark></td>
-                        <td class="fw-bold text-warning">${siswa.token}</td>
-                        <td><span class="badge bg-success">${siswa.status}</span></td>
-                    </tr>`;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Belum ada siswa terdaftar di kelas ini.</td></tr>`;
-            }
+      document.getElementById('loader-halaman').classList.remove('hidden');
+      
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'simpanSiswaMassal',
+          id_kelas: kelasAktifGlobal.id,
+          data_siswa: dataSiswaMassalTerbaca
         })
-        .catch(() => {
-            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Gagal sinkronisasi data siswa.</td></tr>`;
-        });
-    }
-
-    // =========================================================================
-    // MODUL REKAP BANK SOAL
-    // =========================================================================
-    let dataSoalMassalTerbaca = [];
-
-    function aturFormPilihan() {
-        const jenis = document.getElementById('soalJenis').value;
-        const container = document.getElementById('containerOpsiPG');
-        if(jenis === 'ISIAN SINGKAT') {
-            container.classList.add('hidden');
-            document.getElementById('soalOpsiA').required = false;
-            document.getElementById('soalOpsiB').required = false;
+      })
+      .then(res => res.json())
+      .then(res => {
+        if(res.status === 'success') {
+          alert('Berhasil menyimpan seluruh data siswa!');
+          document.getElementById('excelPesertaInput').value = "";
+          document.getElementById('btnSimpanPeserta').disabled = true;
+          muatDataSiswaEksisting();
         } else {
-            container.classList.remove('hidden');
+          alert('Gagal: ' + res.message);
         }
+      })
+      .catch(() => alert('Gagal memproses data ke database.'))
+      .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
-    function bacaExcelSoal() {
-        const fileInput = document.getElementById('excelSoalInput');
-        if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file excel bank soal!");
-        
-        const file = fileInput.files[0];
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const arrBuffer = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(arrBuffer, {type: 'array'});
-                const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-                
-                if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('pertanyaan') || !sheetJson[0].hasOwnProperty('kunci_jawaban')) {
-                    return alert("Format kolom excel tidak sah! Minimal wajib ada kolom 'pertanyaan', 'mata_pelajaran' dan 'kunci_jawaban'.");
-                }
-                
-                dataSoalMassalTerbaca = sheetJson;
-                document.getElementById('btnSimpanSoalMassal').disabled = false;
-                alert(`Sukses membaca ${sheetJson.length} butir soal dari Excel. Siap diunggah.`);
-            } catch(err) {
-                alert("Gagal memproses dokumen soal: " + err.toString());
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    }
-
-    function kirimSoalMassal() {
-        if(dataSoalMassalTerbaca.length === 0) return;
-        if(!confirm("Apakah Anda yakin ingin mengimpor seluruh bank soal dari Excel ini?")) return;
-        
-        document.getElementById('loader-halaman').classList.remove('hidden');
-        
-        fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'simpanSoalMassal',
-                id_kelas: kelasAktifGlobal.id,
-                data_soal: dataSoalMassalTerbaca
-            })
-        })
-        .then(res => res.json())
-        .then(res => {
-            alert(res.message);
-            if(res.status === 'success') {
-                document.getElementById('excelSoalInput').value = "";
-                document.getElementById('btnSimpanSoalMassal').disabled = true;
-                muatBankSoal();
-            }
-        })
-        .catch(() => alert("Koneksi server terputus."))
-        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
-    }
-
-    function simpanSoalTunggal(e) {
-        e.preventDefault();
-        document.getElementById('loader-halaman').classList.remove('hidden');
-        
-        const payloadSoal = {
-            mata_pelajaran: document.getElementById('soalMapel').value,
-            id_kelas: kelasAktifGlobal.id,
-            jenis_soal: document.getElementById('soalJenis').value,
-            pertanyaan: document.getElementById('soalPertanyaan').value,
-            pilihan_a: document.getElementById('soalOpsiA').value || "",
-            pilihan_b: document.getElementById('soalOpsiB').value || "",
-            pilihan_c: document.getElementById('soalOpsiC').value || "",
-            pilihan_d: document.getElementById('soalOpsiD').value || "",
-            kunci_jawaban: document.getElementById('soalKunci').value,
-            bobot_nilai: parseInt(document.getElementById('soalBobot').value) || 1,
-            gambar: "",
-            nomor_soal: parseInt(document.getElementById('soalNomor').value) || 1
-        };
-
-        fetch(API_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'tambahSoalTunggal',
-                id_kelas: kelasAktifGlobal.id,
-                data_soal: payloadSoal
-            })
-        })
-        .then(res => res.json())
-        .then(res => {
-            alert(res.message);
-            if(res.status === 'success') {
-                document.getElementById('formSoalTunggal').reset();
-                aturFormPilihan();
-                muatBankSoal();
-            }
-        })
-        .catch(() => alert("Gagal mengirim data manual."))
-        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
-    }
-
-    // --- STRATEGI BACA & TAMPILKAN FILE FORMAT .PNG DARI SUBFOLDER FOLDER img/kls-xx ---
     function muatBankSoal() {
-        const mapelTerpilih = document.getElementById('pilihMapelDatabase').value;
-        const tbody = document.getElementById('tabelSoalBody');
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-slate-300"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Mengunduh database soal ${mapelTerpilih}...</td></tr>`;
-        
-        fetch(`${API_URL}?action=ambilBankSoal&mata_pelajaran=${encodeURIComponent(mapelTerpilih)}&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+      const targetMapel = document.getElementById('pilihMapelDatabase').value;
+      const tbody = document.getElementById('tabelSoalBody');
+      tbody.innerHTML = `<tr><td colspan="7" class="text-center text-info"><i class="fa-solid fa-spinner animate-spin"></i> Membaca Database Soal...</td></tr>`;
+
+      fetch(`${API_URL}?action=ambilBankSoal&mata_pelajaran=${encodeURIComponent(targetMapel)}&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
         .then(res => res.json())
         .then(res => {
-            if(res.status === 'success' && res.data.length > 0) {
-                tbody.innerHTML = "";
-                res.data.forEach(soal => {
-                    let textOpsi = '';
-                    if(soal.jenis_soal === 'PILIHAN GANDA') {
-                        textOpsi = `
-                        <div class="mt-1 text-slate-400 font-semibold">
-                           A. ${soal.pilihan_a} | B. ${soal.pilihan_b} <br>
-                           C. ${soal.pilihan_c} | D. ${soal.pilihan_d}
-                        </div>`;
-                    }
-                    
-                    let slotGambar = '';
-                    if(soal.gambar && soal.gambar.trim() !== "") {
-                        let namaFileSaja = soal.gambar.split('/').pop();
-                        const folderKelas = kelasAktifGlobal.id.toLowerCase(); 
-                        
-                        // Konstruksi URL gambar dipaksa membaca dari repositori utama Github format .png
-                        const urlSajiGambar = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/img/${folderKelas}/${namaFileSaja}`;
-                        
-                        slotGambar = `
-                        <div class="mb-2"><img src="${urlSajiGambar}" class="img-thumbnail d-block mx-auto" style="max-height:80px;" onerror="this.onerror=null;this.src='https://placehold.co/120x80/222/fff?text=Format+.PNG';"></div>
-                        <button class="btn btn-xs btn-danger font-bold text-xs w-100" onclick="pemicuUnggahGambar('${soal.id_soal}', '${mapelTerpilih}')">🔄 Ganti</button>`;
-                    } else {
-                        slotGambar = `<button class="btn btn-xs btn-outline-info font-bold text-xs w-100" onclick="pemicuUnggahGambar('${soal.id_soal}', '${mapelTerpilih}')"><i class="fa-solid fa-image"></i> Pasang Gambar</button>`;
-                    }
+          tbody.innerHTML = "";
+          if(res.status === 'success' && res.data && res.data.length > 0) {
+            res.data.forEach(soal => {
+              let no = soal.nomor_soal || soal.NOMOR_SOAL || '-';
+              let id = soal.id_soal || soal.ID_SOAL || '-';
+              let jenis = soal.jenis_soal || soal.JENIS_SOAL || 'PG';
+              let tanya = soal.pertanyaan || soal.PERTANYAAN || '';
+              let kunci = soal.kunci_jawaban || soal.KUNCI_JAWABAN || '';
+              let bobot = soal.bobot_nilai || soal.BOBOT_NILAI || 1;
+              let gbr = soal.gambar || soal.GAMBAR || '';
 
-                    tbody.innerHTML += `
-                    <tr>
-                        <td class="text-center font-bold text-amber-400 text-base">${soal.nomor_soal}</td>
-                        <td><small><code>${soal.id_soal}</code></small></td>
-                        <td><span class="badge ${soal.jenis_soal === 'PILIHAN GANDA' ? 'bg-primary':'bg-purple-600'}">${soal.jenis_soal}</span></td>
-                        <td>
-                           <div class="text-slate-100 font-bold">${soal.pertanyaan}</div>
-                           ${textOpsi}
-                        </td>
-                        <td class="text-center font-bold text-emerald-400">${soal.kunci_jawaban}</td>
-                        <td class="text-center">${soal.bobot_nilai}</td>
-                        <td>${slotGambar}</td>
-                    </tr>`;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Belum ada bank soal terdaftar untuk mapel ${mapelTerpilih} di kelas ini.</td></tr>`;
-            }
+              let rincianSoal = `<strong>${tanya}</strong>`;
+              if(jenis === 'PILIHAN GANDA') {
+                rincianSoal += `<div class="mt-1 ps-2 text-slate-300">
+                  A. ${soal.pilihan_a || soal.PILIHAN_A || ''}<br>
+                  B. ${soal.pilihan_b || soal.PILIHAN_B || ''}<br>
+                  C. ${soal.pilihan_c || soal.PILIHAN_C || ''}<br>
+                  D. ${soal.pilihan_d || soal.PILIHAN_D || ''}
+                </div>`;
+              }
+
+              let areaGambar = '';
+              if(gbr !== '') {
+                areaGambar = `<img src="https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/img/${gbr}" class="img-thumbnail d-block mb-1" style="max-height:80px;">`;
+              }
+              areaGambar += `<button class="btn btn-xs btn-primary p-1 text-xs" style="font-size:11px;" onclick="pemicuUploadGambar('${id}','${targetMapel}')">📁 Set Gambar</button>`;
+
+              tbody.innerHTML += `
+                <tr>
+                  <td class="text-center">${no}</td>
+                  <td><code>${id}</code></td>
+                  <td><small>${jenis}</small></td>
+                  <td>${rincianSoal}</td>
+                  <td class="text-center text-success fw-bold">${kunci}</td>
+                  <td class="text-center">${bobot}</td>
+                  <td>${areaGambar}</td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Belum ada bank soal terunggah untuk mata pelajaran ${targetMapel}.</td></tr>`;
+          }
         })
         .catch(() => {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Gagal memuat bank soal dari server cloud.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Gagal mengambil data bank soal.</td></tr>`;
         });
     }
 
-    function pemicuUnggahGambar(idSoal, mapel) {
-        targetUploadGambar = { idSoal: idSoal, sheetName: mapel };
-        document.getElementById('inputFileGambarDinamis').click();
+    function pemicuUploadGambar(idSoal, mapel) {
+      targetUploadGambar = { idSoal: idSoal, sheetName: mapel };
+      document.getElementById('inputFileGambarDinamis').click();
     }
 
-    // --- PROSES UNGHAH DAN PAKSA EKSTENSI KELUARAN MENJADI .PNG ---
-    function prosesUnggahGambarDinamis(inputElement) {
-        if(!inputElement.files || inputElement.files.length === 0) return;
-        const file = inputElement.files[0];
+    function prosesUnggahGambarDinamis(el) {
+      if(!el.files || el.files.length === 0) return;
+      const file = el.files[0];
+      const namaFileFinal = `img_${targetUploadGambar.idSoal}_${new Date().getTime()}.png`;
+      
+      document.getElementById('loader-halaman').classList.remove('hidden');
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64Data = e.target.result.split(',')[1];
         
-        const folderKelas = kelasAktifGlobal.id.toLowerCase(); 
-        
-        // Penamaan file diatur otomatis berakhiran .png secara paten
-        const namaFileUnik = `IMG-${targetUploadGambar.idSoal}-${new Date().getTime()}.png`;
-        
-        document.getElementById('loader-halaman').classList.remove('hidden');
-        
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const base64Content = e.target.result.split(',')[1];
-            
-            fetch(API_URL, {
-                method: 'POST',
-                body: JSON.stringify({
-                    action: 'proxyUploadGithub',
-                    id_soal: targetUploadGambar.idSoal,
-                    mata_pelajaran: targetUploadGambar.sheetName,
-                    path: `img/${folderKelas}/${namaFileUnik}`, 
-                    content: base64Content,
-                    nama_gambar: namaFileUnik 
-                })
-            })
-            .then(res => res.json())
-            .then(res => {
-                alert(res.message);
-                muatBankSoal();
-            })
-            .catch(() => alert("Gagal mengirimkan file gambar PNG ke repositori."))
-            .finally(() => {
-                inputElement.value = "";
-                document.getElementById('loader-halaman').classList.add('hidden');
-            });
-        };
-        reader.readAsDataURL(file);
+        fetch(API_URL, {
+          method: 'POST',
+          body: JSON.stringify({
+            action: 'proxyUploadGithub',
+            path: `img/${namaFileFinal}`,
+            content: base64Data,
+            id_soal: targetUploadGambar.idSoal,
+            mata_pelajaran: targetUploadGambar.sheetName,
+            nama_gambar: namaFileFinal
+          })
+        })
+        .then(res => res.json())
+        .then(res => {
+          if(res.status === 'success') {
+            alert('Sukses menautkan gambar ke dalam soal!');
+            muatBankSoal();
+          } else {
+            alert('Gagal unggah: ' + res.message);
+          }
+        })
+        .catch(() => alert('Gagal proxy upload.'))
+        .finally(() => {
+          document.getElementById('loader-halaman').classList.add('hidden');
+          el.value = "";
+        });
+      };
+      reader.readAsDataURL(file);
     }
 
     function muatRekapNilai() {
-        const tbody = document.getElementById('tabelNilaiBody');
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-slate-300"><i class="fa-solid fa-spinner animate-spin mr-1"></i> Mengunduh rekap nilai...</td></tr>`;
-        
-        fetch(`${API_URL}?action=ambilRekapNilai&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+      const tbody = document.getElementById('tabelNilaiBody');
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center text-info"><i class="fa-solid fa-spinner animate-spin"></i> Mengambil data nilai...</td></tr>`;
+
+      fetch(`${API_URL}?action=ambilRekapNilai&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
         .then(res => res.json())
         .then(res => {
-            if(res.status === 'success' && res.data.length > 0) {
-                tbody.innerHTML = "";
-                res.data.forEach(n => {
-                    let formatWaktu = new Date(n.timestamp).toLocaleString('id-ID');
-                    tbody.innerHTML += `
-                    <tr>
-                        <td><small>${formatWaktu}</small></td>
-                        <td><code>${n.id_siswa}</code></td>
-                        <td class="font-bold">${n.nama_lengkap}</td>
-                        <td><span class="badge bg-dark">${n.mata_pelajaran}</span></td>
-                        <td class="font-bold text-center text-warning text-base">${n.nilai_akhir}</td>
-                        <td class="text-center"><span class="badge bg-success">SELESAI LENGKAP</span></td>
-                    </tr>`;
-                });
-            } else {
-                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Belum ada rekap nilai masuk dari kelas ini.</td></tr>`;
-            }
+          tbody.innerHTML = "";
+          if(res.status === 'success' && res.data && res.data.length > 0) {
+            res.data.forEach(item => {
+              let waktu = item.timestamp ? new Date(item.timestamp).toLocaleString('id-ID') : '-';
+              tbody.innerHTML += `
+                <tr>
+                  <td>${waktu}</td>
+                  <td><code>${item.id_siswa}</code></td>
+                  <td class="text-white fw-bold">[Diproses di Sheet]</td>
+                  <td><span class="badge bg-primary">${item.mata_pelajaran}</span></td>
+                  <td><strong class="text-warning text-lg">${item.nilai_akhir}</strong></td>
+                  <td><span class="badge bg-success">${item.status_ujian}</span></td>
+                </tr>
+              `;
+            });
+          } else {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Belum ada siswa yang menyelesaikan ujian di kelas ini.</td></tr>`;
+          }
         })
         .catch(() => {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal memuat rekap nilai.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal memuat rekap nilai.</td></tr>`;
         });
+    }
+
+    function aturFormPilihan() {
+      const jenis = document.getElementById('soalJenis').value;
+      document.getElementById('containerOpsiPG').style.display = (jenis === 'PILIHAN GANDA') ? 'block' : 'none';
+    }
+
+    function simpanSoalTunggal(e) {
+      e.preventDefault();
+      document.getElementById('loader-halaman').classList.remove('hidden');
+
+      const payload = {
+        action: 'tambahSoalTunggal',
+        id_kelas: kelasAktifGlobal.id,
+        data_soal: {
+          nomor_soal: document.getElementById('soalNomor').value,
+          mata_pelajaran: document.getElementById('soalMapel').value,
+          jenis_soal: document.getElementById('soalJenis').value,
+          pertanyaan: document.getElementById('soalPertanyaan').value,
+          pilihan_a: document.getElementById('soalOpsiA').value,
+          pilihan_b: document.getElementById('soalOpsiB').value,
+          pilihan_c: document.getElementById('soalOpsiC').value,
+          pilihan_d: document.getElementById('soalOpsiD').value,
+          kunci_jawaban: document.getElementById('soalKunci').value,
+          bobot_nilai: document.getElementById('soalBobot').value,
+          gambar: ''
+        }
+      };
+
+      fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
+      .then(res => res.json())
+      .then(res => {
+        if(res.status === 'success') {
+          alert('Berhasil menyimpan soal baru!');
+          document.getElementById('formSoalTunggal').reset();
+          aturFormPilihan();
+          muatBankSoal();
+        } else {
+          alert('Gagal: ' + res.message);
+        }
+      })
+      .catch(() => alert('Terjadi gangguan server cloud.'))
+      .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
   </script>
 </body>
