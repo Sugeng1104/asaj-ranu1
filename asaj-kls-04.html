@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.20.0.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght=400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -19,9 +18,10 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Style Tambahan untuk memaksa video berbentuk kotak di header */
         #container-video-pengawas video {
             aspect-ratio: 1 / 1;
-            object-fit: cover;
+            object-cover: cover;
         }
     </style>
 </head>
@@ -74,12 +74,12 @@
                         <div id="container-video-pengawas" class="w-28 h-28 bg-white rounded-2xl p-1 border border-slate-200 shadow-lg overflow-hidden relative self-center sm:self-start">
                             <div class="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-center gap-1.5 z-10 bg-white/70 backdrop-blur-sm py-0.5 rounded-full px-2">
                                 <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-                                <span id="label-status-kamera" class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengawas</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengawas</span>
                             </div>
                             <div class="w-full h-full bg-slate-900 rounded-xl overflow-hidden shadow-inner relative border border-slate-100">
-                                <div id="webcam-siswa" class="w-full h-full scale-x-[-1] rounded-xl overflow-hidden flex items-center justify-center"></div>
+                                <video id="webcam-siswa" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]"></video>
                                 <div id="status-kamera-error" class="hidden absolute inset-0 bg-slate-900 text-slate-200 text-[10px] font-bold p-2 flex flex-col items-center justify-center text-center gap-1">
-                                    <span class="text-lg">⚠️</span> Izinkan Kamera Browser!
+                                    <span class="text-lg">⚠️</span> Aktifkan Kamera!
                                 </div>
                             </div>
                         </div>
@@ -196,10 +196,7 @@
         let sisaWaktuDetik = 90 * 60; 
         let intervalTimer = null;
         let mapelPilihanSiswa = "";
-        
-        let agoraClient = null;
-        let localTracks = { videoTrack: null };
-        let localStreamHTML = null; 
+        let streamKamera = null; 
 
         document.addEventListener("DOMContentLoaded", function() {
             const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
@@ -217,89 +214,36 @@
             }
         });
 
-        // Fungsi membuat ID Angka Murni yang valid untuk parameter UID Agora SDK
-        function buatAngkaUidDariString(str) {
-            let hash = 0;
-            if (str.length === 0) return Math.floor(Math.random() * 100000);
-            for (let i = 0; i < str.length; i++) {
-                const chr = str.charCodeAt(i);
-                hash = ((hash << 5) - hash) + chr;
-                hash |= 0;
-            }
-            return Math.abs(hash) || Math.floor(Math.random() * 100000);
-        }
-
-        async function aktifkanKameraSiswa() {
+        function aktifkanKameraSiswa() {
+            const video = document.getElementById("webcam-siswa");
             const errorView = document.getElementById("status-kamera-error");
-            const labelStatus = document.getElementById("label-status-kamera");
-            const wadahVideo = document.getElementById("webcam-siswa");
-            
-            const AGORA_APP_ID = "c13ddbf6e85a432494c0257b15418807"; 
-            const CHANNEL_NAME = "asaj_kelas_4_ranu1"; 
-            
-            const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-            const rawId = dataSiswa ? (dataSiswa.id_siswa || dataSiswa.ID_SISWA || "") : "";
-            const UID_SISWA = buatAngkaUidDariString(rawId.toString());
 
-            try {
-                // Inisialisasi client Agora RTC
-                agoraClient = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
-                
-                await agoraClient.join(AGORA_APP_ID, CHANNEL_NAME, null, UID_SISWA);
-
-                localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack({
-                    encoderConfig: { width: 160, height: 160, frameRate: 10 }
-                });
-
-                wadahVideo.innerHTML = ""; 
-                localTracks.videoTrack.play("webcam-siswa");
-                errorView.classList.add("hidden");
-
-                await agoraClient.publish([localTracks.videoTrack]);
-                labelStatus.innerText = "ONLINE";
-                console.log("Kamera Agora streaming aktif. UID: " + UID_SISWA);
-
-            } catch (error) {
-                console.warn("Agora Server terhambat, mengaktifkan Fallback Kamera Lokal...", error);
-                
-                // FALLBACK MODE: Jika server Agora menolak/eror, aktifkan kamera lokal murni HTML5 agar siswa tetap bisa ujian
-                try {
-                    const streamLokal = await navigator.mediaDevices.getUserMedia({ video: { width: 160, height: 160 } });
-                    localStreamHTML = streamLokal;
-                    
-                    wadahVideo.innerHTML = "";
-                    const elemenVideoMurni = document.createElement("video");
-                    elemenVideoMurni.srcObject = streamLokal;
-                    elemenVideoMurni.autoplay = true;
-                    elemenVideoMurni.playsInline = true;
-                    elemenVideoMurni.className = "w-full h-full object-cover rounded-xl";
-                    
-                    wadahVideo.appendChild(elemenVideoMurni);
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // Konfigurasi kamera berbentuk kotak (1:1)
+                navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 200 }, height: { ideal: 200 }, aspectRatio: 1.0 } })
+                .then(function(stream) {
+                    streamKamera = stream;
+                    video.srcObject = stream;
                     errorView.classList.add("hidden");
-                    labelStatus.innerText = "LOKAL";
-                } catch (errLokal) {
-                    console.error("Kamera sepenuhnya diblokir browser:", errLokal);
+                    
+                    stream.getVideoTracks()[0].onended = function () {
+                        alert("Peringatan keras! Kamera Anda terputus atau dimatikan. Hubungi pengawas ruangan.");
+                        errorView.classList.remove("hidden");
+                    };
+                })
+                .catch(function(error) {
+                    console.error("Gagal akses kamera: ", error);
                     errorView.classList.remove("hidden");
-                }
+                    alert("Aplikasi Ujian membutuhkan izin kamera! Silakan reload halaman dan pilih 'Allow/Izinkan Kamera'.");
+                });
+            } else {
+                alert("Browser ini tidak mendukung fitur pengawasan kamera.");
             }
         }
 
-        async function matikanKameraSiswa() {
-            try {
-                if (localTracks.videoTrack) {
-                    localTracks.videoTrack.stop();
-                    localTracks.videoTrack.close();
-                    localTracks.videoTrack = null;
-                }
-                if (localStreamHTML) {
-                    localStreamHTML.getTracks().forEach(track => track.stop());
-                }
-                if (agoraClient) {
-                    await agoraClient.leave();
-                }
-                console.log("Koneksi kamera dimatikan aman.");
-            } catch (e) {
-                console.error("Gagal menonaktifkan kamera: ", e);
+        function matikanKameraSiswa() {
+            if (streamKamera) {
+                streamKamera.getTracks().forEach(track => track.stop());
             }
         }
 
@@ -320,8 +264,13 @@
 
             fetch(API_URL, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify({ action: "ambilDataSiswa", id_kelas: "KLS-04" })
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({
+                    action: "ambilDataSiswa",
+                    id_kelas: "KLS-04"
+                })
             })
                 .then(res => res.json())
                 .then(respon => {
@@ -345,8 +294,14 @@
                             
                             fetch(API_URL, {
                                 method: "POST",
-                                headers: { "Content-Type": "text/plain" },
-                                body: JSON.stringify({ action: "ambilBankSoal", mata_pelajaran: mapelPilihanSiswa, id_kelas: "KLS-04" })
+                                headers: {
+                                    "Content-Type": "text/plain"
+                                },
+                                body: JSON.stringify({
+                                    action: "ambilBankSoal",
+                                    mata_pelajaran: mapelPilihanSiswa,
+                                    id_kelas: "KLS-04"
+                                })
                             })
                             .then(soalRes => soalRes.json())
                             .then(responSoal => {
@@ -355,11 +310,11 @@
                                     localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
                                     bukaHalamanUjian(cocok);
                                 } else {
-                                    alert(`Maaf, Berkas butir soal ${mapelPilihanSiswa} belum tersedia.`);
+                                    alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
                                 }
                             })
                             .catch(() => {
-                                alert(`Maaf, Berkas butir soal ${mapelPilihanSiswa} belum tersedia.`);
+                                alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
                             })
                             .finally(() => {
                                 btn.disabled = false;
@@ -394,7 +349,7 @@
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
 
-            aktifkanKameraSiswa(); 
+            aktifkanKameraSiswa(); // Trigger kamera menyala saat halaman ujian dibuka
             jalankanTimerUjian();
             muatMasterSoal();
         }
@@ -422,8 +377,14 @@
 
             fetch(API_URL, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify({ action: "ambilBankSoal", mata_pelajaran: mapelPilihanSiswa, id_kelas: "KLS-04" })
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify({
+                    action: "ambilBankSoal",
+                    mata_pelajaran: mapelPilihanSiswa,
+                    id_kelas: "KLS-04"
+                })
             })
                 .then(res => res.json())
                 .then(respon => {
@@ -575,83 +536,69 @@
 
         function kirimKeSpreadsheetOtomatis(statusUjian, callback) {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-            if (!dataSiswa) return;
+            if (!dataSiswa || dataSoalUjian.length === 0) return 0;
 
-            const listJawabanKirim = [];
-            let totalBobotBenar = 0;
+            let totalSkorSiswa = 0;
+            let barisJawaban = [];
 
             dataSoalUjian.forEach((soal, idx) => {
-                const jwbSiswa = (mapJawabanSiswa[idx] || "").toString().trim().toUpperCase();
-                const jwbKunci = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
-                
-                let stsBenar = 0;
-                if (jwbSiswa !== "" && jwbSiswa === jwbKunci) {
-                    stsBenar = 1;
-                    totalBobotBenar += parseFloat(soal.bobot_nilai || 0);
+                const ans = (mapJawabanSiswa[idx] || "").toString().trim().toUpperCase();
+                const key = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
+                const bobot = parseFloat(soal.bobot_nilai || 0);
+
+                barisJawaban.push(`${idx + 1}:${ans === "" ? "-" : ans}`);
+
+                if (ans === key && key !== "") {
+                    totalSkorSiswa += bobot;
                 }
-                listJawabanKirim.push(`${idx+1}:${jwbSiswa}:${stsBenar}`);
             });
 
-            const payloadBenar = {
+            const payload = {
                 action: "simpanJawabanSiswa",
-                id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA,
+                id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA || "-",
                 id_kelas: "KLS-04",
                 mata_pelajaran: mapelPilihanSiswa,
-                string_jawaban: listJawabanKirim.join(","),
-                nilai_akhir: Math.round(totalBobotBenar),
+                daftar_jawaban: barisJawaban.join(", "), 
+                nilai_akhir: totalSkorSiswa,
                 status_ujian: statusUjian
             };
 
             fetch(API_URL, {
                 method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(payloadBenar)
+                headers: {
+                    "Content-Type": "text/plain"
+                },
+                body: JSON.stringify(payload)
             })
-            .then(r => r.json())
-            .then(res => {
-                console.log("Cloud Sync Status:", res.status);
-                if(callback) callback(Math.round(totalBobotBenar));
+            .then(() => {
+                console.log("Cloud Sync Berhasil.");
+                if(callback) callback(totalSkorSiswa);
             })
-            .catch(e => {
-                console.error("Cloud Sync Failed:", e);
-                if(callback) callback(Math.round(totalBobotBenar));
+            .catch(err => {
+                console.error("Cloud Sync Gagal: ", err);
+                if(callback) callback(totalSkorSiswa);
             });
+
+            return totalSkorSiswa;
         }
 
         function prosesSelesaiUjian() {
-            let belumDijawab = 0;
-            dataSoalUjian.forEach((soal, idx) => {
-                if (mapJawabanSiswa[idx] === undefined || mapJawabanSiswa[idx].toString().trim() === "") {
-                    belumDijawab++;
-                }
-            });
-
-            let pesan = "Apakah Ananda yakin ingin mengakhiri ujian ini?";
-            if (belumDijawab > 0) {
-                pesan = `PERINGATAN: Masih ada ${belumDijawab} soal yang BELUM Anda jawab! \n\n` + pesan;
-            }
-
-            if (confirm(pesan)) {
-                const btnLanjut = document.getElementById("btn-lanjut");
-                btnLanjut.disabled = true;
-                btnLanjut.innerText = "Menyimpan...";
-
+            if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
+                clearInterval(intervalTimer);
+                matikanKameraSiswa(); // Matikan kamera jika ujian selesai
+                
                 kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
-                    matikanKameraSiswa();
-                    if(intervalTimer) clearInterval(intervalTimer);
-
                     const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
-                    document.getElementById("text-nama-sukses").innerText = dataSiswa ? (dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP) : "Peserta";
-                    document.getElementById("score-display").innerText = nilaiFinal;
+                    document.getElementById("text-nama-sukses").innerText = dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP || "Siswa";
+                    
+                    const displaySkor = document.getElementById("score-display");
+                    displaySkor.innerText = nilaiFinal;
+                    displaySkor.className = "text-6xl font-black"; 
 
-                    const scEl = document.getElementById("score-display");
-                    if (nilaiFinal >= 75) {
-                        scEl.className = "text-6xl font-black text-emerald-500";
-                    } else if (nilaiFinal >= 50) {
-                        scEl.className = "text-6xl font-black text-amber-500";
-                    } else {
-                        scEl.className = "text-6xl font-black text-rose-500";
-                    }
+                    if (nilaiFinal < 70) displaySkor.classList.add("text-red-600");
+                    else if (nilaiFinal <= 89) displaySkor.classList.add("text-blue-600");
+                    else if (nilaiFinal <= 99) displaySkor.classList.add("text-amber-500");
+                    else if (nilaiFinal === 100) displaySkor.classList.add("emas-menyala");
 
                     document.getElementById("success-modal").classList.remove("hidden");
                 });
@@ -659,10 +606,7 @@
         }
 
         function logoutSiswa() {
-            localStorage.removeItem("sesi_siswa_asaj_kls4");
-            localStorage.removeItem("asaj_mapel_kls4");
-            localStorage.removeItem("asaj_timer_kls4");
-            localStorage.removeItem("asaj_answers_kls4");
+            localStorage.clear();
             window.location.reload();
         }
     </script>
