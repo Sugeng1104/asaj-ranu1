@@ -209,7 +209,7 @@
             if (sesi && mapelSaved) { 
                 mapelPilihanSiswa = mapelSaved.toString().toUpperCase().trim();
                 const waktuLokal = localStorage.getItem("asaj_timer_kls4");
-                if (waktuLokal) { sisaWaktuDetik = parseInt(waktuLokal); }
+                if (waktuLokal) { sisaWaktuDetik = parseInt(wokal); }
                 
                 const mapLokal = localStorage.getItem("asaj_answers_kls4");
                 if (mapLokal) { mapJawabanSiswa = JSON.parse(mapLokal); }
@@ -570,4 +570,95 @@
         function kirimKeSpreadsheetOtomatis(statusUjian, callback) {
             const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
             if (!dataSiswa) return;
-            // Sisa fungsi logika sync otomatis tetap berjalan utuh di bawah ini...
+
+            const listJawabanKirim = [];
+            let totalBobotBenar = 0;
+
+            dataSoalUjian.forEach((soal, idx) => {
+                const jwbSiswa = (mapJawabanSiswa[idx] || "").toString().trim().toUpperCase();
+                const jwbKunci = (soal.kunci_jawaban || "").toString().trim().toUpperCase();
+                
+                let stsBenar = 0;
+                if (jwbSiswa !== "" && jwbSiswa === jwbKunci) {
+                    stsBenar = 1;
+                    totalBobotBenar += parseFloat(soal.bobot_nilai || 0);
+                }
+                listJawabanKirim.push(`${idx+1}:${jwbSiswa}:${stsBenar}`);
+            });
+
+            const payloadBenar = {
+                action: "simpanJawabanSiswa",
+                id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA,
+                id_kelas: "KLS-04",
+                mata_pelajaran: mapelPilihanSiswa,
+                string_jawaban: listJawabanKirim.join(","),
+                nilai_akhir: Math.round(totalBobotBenar),
+                status_ujian: statusUjian
+            };
+
+            fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payloadBenar)
+            })
+            .then(r => r.json())
+            .then(res => {
+                console.log("Cloud Sync Status:", res.status);
+                if(callback) callback(Math.round(totalBobotBenar));
+            })
+            .catch(e => {
+                console.error("Cloud Sync Failed:", e);
+                if(callback) callback(Math.round(totalBobotBenar));
+            });
+        }
+
+        function prosesSelesaiUjian() {
+            let belumDijawab = 0;
+            dataSoalUjian.forEach((soal, idx) => {
+                if (mapJawabanSiswa[idx] === undefined || mapJawabanSiswa[idx].toString().trim() === "") {
+                    belumDijawab++;
+                }
+            });
+
+            let pesan = "Apakah Ananda yakin ingin mengakhiri ujian ini?";
+            if (belumDijawab > 0) {
+                pesan = `PERINGATAN: Masih ada ${belumDijawab} soal yang BELUM Anda jawab! \n\n` + pesan;
+            }
+
+            if (confirm(pesan)) {
+                const btnLanjut = document.getElementById("btn-lanjut");
+                btnLanjut.disabled = true;
+                btnLanjut.innerText = "Menyimpan...";
+
+                kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
+                    matikanKameraSiswa();
+                    if(intervalTimer) clearInterval(intervalTimer);
+
+                    const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
+                    document.getElementById("text-nama-sukses").innerText = dataSiswa ? (dataSiswa.nama_lengkap || dataSiswa.NAMA_LENGKAP) : "Peserta";
+                    document.getElementById("score-display").innerText = nilaiFinal;
+
+                    const scEl = document.getElementById("score-display");
+                    if (nilaiFinal >= 75) {
+                        scEl.className = "text-6xl font-black text-emerald-500";
+                    } else if (nilaiFinal >= 50) {
+                        scEl.className = "text-6xl font-black text-amber-500";
+                    } else {
+                        scEl.className = "text-6xl font-black text-rose-500";
+                    }
+
+                    document.getElementById("success-modal").classList.remove("hidden");
+                });
+            }
+        }
+
+        function logoutSiswa() {
+            localStorage.removeItem("sesi_siswa_asaj_kls4");
+            localStorage.removeItem("asaj_mapel_kls4");
+            localStorage.removeItem("asaj_timer_kls4");
+            localStorage.removeItem("asaj_answers_kls4");
+            window.location.reload();
+        }
+    </script>
+</body>
+</html>
