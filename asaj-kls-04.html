@@ -18,6 +18,11 @@
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* Style Tambahan untuk memaksa video berbentuk kotak di header */
+        #container-video-pengawas video {
+            aspect-ratio: 1 / 1;
+            object-cover: cover;
+        }
     </style>
 </head>
 <body class="bg-[#f8fafc] min-h-screen flex flex-col">
@@ -55,13 +60,29 @@
     </div>
 
     <div id="exam-section" class="hidden flex-col flex-grow animate-fade-in">
-        <header class="bg-white border-b border-slate-200 w-full px-8 py-4 shadow-sm">
+        <header class="bg-white border-b border-slate-200 w-full px-8 py-4 shadow-sm relative z-10">
             <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div class="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
-                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500 font-bold">✓</div>
-                    <div class="text-center sm:text-left">
-                        <h1 id="display-nama" class="text-xl font-extrabold text-slate-800 uppercase tracking-tight">Memuat Nama...</h1>
-                        <p class="text-[13px] text-slate-400 font-medium mt-0.5">Peserta ASAJ Kelas 4</p>
+                
+                <div class="flex items-start gap-4 w-full sm:w-auto justify-center sm:justify-start">
+                    <div class="w-11 h-11 rounded-full border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-500 font-bold shrink-0 mt-1">✓</div>
+                    <div class="flex flex-col gap-3 text-center sm:text-left">
+                        <div>
+                            <h1 id="display-nama" class="text-xl font-extrabold text-slate-800 uppercase tracking-tight">Memuat Nama...</h1>
+                            <p class="text-[13px] text-slate-400 font-medium mt-0.5">Peserta ASAJ Kelas 4</p>
+                        </div>
+                        
+                        <div id="container-video-pengawas" class="w-28 h-28 bg-white rounded-2xl p-1 border border-slate-200 shadow-lg overflow-hidden relative self-center sm:self-start">
+                            <div class="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-center gap-1.5 z-10 bg-white/70 backdrop-blur-sm py-0.5 rounded-full px-2">
+                                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Pengawas</span>
+                            </div>
+                            <div class="w-full h-full bg-slate-900 rounded-xl overflow-hidden shadow-inner relative border border-slate-100">
+                                <video id="webcam-siswa" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]"></video>
+                                <div id="status-kamera-error" class="hidden absolute inset-0 bg-slate-900 text-slate-200 text-[10px] font-bold p-2 flex flex-col items-center justify-center text-center gap-1">
+                                    <span class="text-lg">⚠️</span> Aktifkan Kamera!
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -175,6 +196,7 @@
         let sisaWaktuDetik = 90 * 60; 
         let intervalTimer = null;
         let mapelPilihanSiswa = "";
+        let streamKamera = null; 
 
         document.addEventListener("DOMContentLoaded", function() {
             const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
@@ -191,6 +213,39 @@
                 bukaHalamanUjian(JSON.parse(sesi)); 
             }
         });
+
+        function aktifkanKameraSiswa() {
+            const video = document.getElementById("webcam-siswa");
+            const errorView = document.getElementById("status-kamera-error");
+
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                // Konfigurasi kamera berbentuk kotak (1:1)
+                navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 200 }, height: { ideal: 200 }, aspectRatio: 1.0 } })
+                .then(function(stream) {
+                    streamKamera = stream;
+                    video.srcObject = stream;
+                    errorView.classList.add("hidden");
+                    
+                    stream.getVideoTracks()[0].onended = function () {
+                        alert("Peringatan keras! Kamera Anda terputus atau dimatikan. Hubungi pengawas ruangan.");
+                        errorView.classList.remove("hidden");
+                    };
+                })
+                .catch(function(error) {
+                    console.error("Gagal akses kamera: ", error);
+                    errorView.classList.remove("hidden");
+                    alert("Aplikasi Ujian membutuhkan izin kamera! Silakan reload halaman dan pilih 'Allow/Izinkan Kamera'.");
+                });
+            } else {
+                alert("Browser ini tidak mendukung fitur pengawasan kamera.");
+            }
+        }
+
+        function matikanKameraSiswa() {
+            if (streamKamera) {
+                streamKamera.getTracks().forEach(track => track.stop());
+            }
+        }
 
         function prosesLoginSiswa(event) {
             event.preventDefault();
@@ -227,7 +282,6 @@
                         });
                         
                         if (cocok) {
-                            // Validasi kolom status: Wajib bernilai "Aktif"
                             const statusSiswa = (cocok.status || cocok.STATUS || '').toString().trim().toLowerCase();
                             if (statusSiswa !== "aktif") {
                                 alert("Gagal Login: Status akun Anda tidak Aktif!");
@@ -238,7 +292,6 @@
 
                             mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
                             
-                            // Cek ketersediaan butir soal ke database sheet sebelum mengizinkan masuk halaman ujian
                             fetch(API_URL, {
                                 method: "POST",
                                 headers: {
@@ -253,12 +306,10 @@
                             .then(soalRes => soalRes.json())
                             .then(responSoal => {
                                 if (responSoal.status === "success" && responSoal.data && responSoal.data.length > 0) {
-                                    // Jika soal tersedia, simpan sesi dan buka ruang ujian
                                     localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(cocok));
                                     localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
                                     bukaHalamanUjian(cocok);
                                 } else {
-                                    // Jika data kosong, tampilkan topup peringatan sesuai request Anda
                                     alert(`Maaf, Mata pelajaran ${mapelPilihanSiswa} belum tersedia.`);
                                 }
                             })
@@ -298,6 +349,7 @@
             document.getElementById("display-idkelas").innerText = "KLS-04"; 
             document.getElementById("display-status").innerText = siswa.status || siswa.STATUS || "AKTIF";
 
+            aktifkanKameraSiswa(); // Trigger kamera menyala saat halaman ujian dibuka
             jalankanTimerUjian();
             muatMasterSoal();
         }
@@ -533,6 +585,7 @@
         function prosesSelesaiUjian() {
             if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
                 clearInterval(intervalTimer);
+                matikanKameraSiswa(); // Matikan kamera jika ujian selesai
                 
                 kirimKeSpreadsheetOtomatis("SELESAI", function(nilaiFinal) {
                     const dataSiswa = JSON.parse(localStorage.getItem("sesi_siswa_asaj_kls4"));
@@ -548,17 +601,13 @@
                     else if (nilaiFinal === 100) displaySkor.classList.add("emas-menyala");
 
                     document.getElementById("success-modal").classList.remove("hidden");
-                    
-                    localStorage.removeItem("asaj_timer_kls4");
-                    localStorage.removeItem("asaj_answers_kls4");
-                    localStorage.removeItem("asaj_mapel_kls4");
                 });
             }
         }
 
         function logoutSiswa() {
-            localStorage.removeItem("sesi_siswa_asaj_kls4");
-            location.reload();
+            localStorage.clear();
+            window.location.reload();
         }
     </script>
 </body>
