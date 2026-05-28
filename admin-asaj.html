@@ -48,15 +48,15 @@
           <div class="text-center mb-4">
               <i class="fa-solid fa-user-shield text-5xl text-blue-500 mb-2"></i>
               <h3 class="text-white fw-bold">ASAJ Cloud System</h3>
-              <p class="text-slate-400 text-sm">Masuk ke Panel Kendali Administrasi Pusat</p>
+              <p class="text-slate-400 text-sm">Masuk Menggunakan Akun Guru / Wali Kelas</p>
           </div>
           
           <form id="form-login" onsubmit="prosesLoginAdmin(event)">
               <div class="mb-3">
-                  <label class="form-label text-slate-300">Username Admin</label>
+                  <label class="form-label text-slate-300">Username Guru</label>
                   <div class="input-group">
                       <span class="input-group-text bg-slate-700 border-slate-600 text-slate-400"><i class="fa-solid fa-user"></i></span>
-                      <input type="text" id="login-username" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Masukkan username" required>
+                      <input type="text" id="login-username" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Contoh: Sugeng11" required>
                   </div>
               </div>
               <div class="mb-4">
@@ -102,7 +102,7 @@
               </div>
 
               <div class="pt-3 border-t border-slate-700">
-                  <div class="text-xs text-slate-400 mb-2 px-2">Masuk sebagai: <span id="nama-admin-aktif" class="text-white fw-bold">Admin</span></div>
+                  <div class="text-xs text-slate-400 mb-2 px-2">Masuk sebagai: <span id="nama-admin-aktif" class="text-white fw-bold">Guru</span></div>
                   <button onclick="keluarSistemAdmin()" class="btn btn-outline-danger btn-sm w-100"><i class="fa-solid fa-power-off me-2"></i> Keluar</button>
               </div>
           </div>
@@ -148,11 +148,11 @@
                       <form onsubmit="buatKamarKelasBaru(event)" class="row g-3">
                           <div class="col-md-4">
                               <label class="form-label text-slate-300">ID Kelas (Gunakan Huruf/Angka Tanpa Spasi)</label>
-                              <input type="text" id="input-id-kelas" class="form-control bg-slate-800 border-slate-600 text-white font-mono" placeholder="Contoh: XII_RPL_1" required>
+                              <input type="text" id="input-id-kelas" class="form-control bg-slate-800 border-slate-600 text-white font-mono" placeholder="Contoh: KLS-04" required>
                           </div>
                           <div class="col-md-5">
                               <label class="form-label text-slate-300">Nama Kelas Panjang / Deskripsi Resmi</label>
-                              <input type="text" id="input-nama-kelas" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Contoh: KELAS XII REKAYASA PERANGKAT LUNAK 1" required>
+                              <input type="text" id="input-nama-kelas" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Contoh: Kelas 4" required>
                           </div>
                           <div class="col-md-3 flex items-end">
                               <button type="submit" class="btn btn-primary w-100 py-2 font-bold"><i class="fa-solid fa-plus me-1"></i> Daftarkan Kelas</button>
@@ -299,7 +299,6 @@
                       <div class="col-12">
                           <div class="card card-custom p-4">
                               <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-database text-amber-400 me-2"></i>Viewer Data Master Soal Cloud</h5>
-                              
                               <input type="file" id="inputFileGambarDinamis" class="hidden" accept="image/*" onchange="prosesUnggahGambarDinamis(this)">
 
                               <div class="table-responsive">
@@ -359,42 +358,57 @@
   </div>
 
   <script>
-    // MASUKKAN ALAMAT URL WEB APP SCRIPT GOOGLE SHEETS ANDA DI SINI
+    // URL WEB APP SCRIPT GOOGLE SHEETS
     const API_URL = "https://script.google.com/macros/s/AKfycbwuzSskmO_G97yNsc_TCHmFCHG6OymXpG5n7W6bL_N_I1qf6gW_0M3mG3H2Y3g4z5A/exec";
     
-    // Variabel Konfigurasi Terhubung Otomatis dari Cloud Config
     let GITHUB_USER = "";
     let GITHUB_REPO = "";
     
-    // State Global Aplikasi
     let kelasAktifGlobal = { id: "", nama: "" };
     let listSemuaKelas = [];
     let targetUploadGambar = { idSoal: "", sheetName: "" };
 
-    // Jalankan pertama kali saat dokumen siap
     document.addEventListener("DOMContentLoaded", function() {
         cekStatusLoginAdmin();
     });
 
-    // 1. SISTEM AUTENTIKASI: LOGIN LANGSUNG TANPA REGISTRASI
+    // 1. SISTEM LOGIN VALIDASI REALTIME KEDALAM DATA_KELAS GOOGLE SHEET
     function prosesLoginAdmin(e) {
         e.preventDefault();
         const user = document.getElementById('login-username').value.trim();
-        const pass = document.getElementById('login-password').value;
+        const pass = document.getElementById('login-password').value.trim();
 
-        // Validasi Akun Masuk (Sesuaikan dengan kredensial yang Anda inginkan)
-        if (user === "admin" && pass === "asaj2026") {
-            const dataSesi = {
-                username: user,
-                nama_lengkap: "Administrator Utama",
-                loginAt: new Date().getTime()
-            };
-            localStorage.setItem('sesi_admin_asaj', JSON.stringify(dataSesi));
-            alert("Autentikasi Berhasil! Selamat datang di Panel Admin.");
-            cekStatusLoginAdmin();
-        } else {
-            alert("Username atau Password salah! Akses ditolak.");
-        }
+        document.getElementById('loader-halaman').classList.remove('hidden');
+
+        // Mengirim request validasi ke Google Sheets App Script
+        fetch(`${API_URL}?action=ambilConfigAwal`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success') {
+                const daftarKelas = res.kelas || [];
+                
+                // Cari data kecocokan username_guru dan password_guru dari sheet Data_Kelas
+                const akunDitemukan = daftarKelas.find(k => k.username_guru === user && k.password_guru === pass);
+
+                if (akunDitemukan) {
+                    const dataSesi = {
+                        username: user,
+                        nama_lengkap: akunDitemukan.nama_guru || "Guru Kelas",
+                        hak_kelas_id: akunDitemukan.id_kelas, // Kunci kelas guru
+                        loginAt: new Date().getTime()
+                    };
+                    localStorage.setItem('sesi_admin_asaj', JSON.stringify(dataSesi));
+                    alert(`Autentikasi Berhasil! Selamat datang, ${dataSesi.nama_lengkap}.`);
+                    cekStatusLoginAdmin();
+                } else {
+                    alert("Akses ditolak! Username atau Password Guru tidak ditemukan dalam sistem.");
+                }
+            } else {
+                alert("Gagal memproses otentikasi data server.");
+            }
+        })
+        .catch(() => alert("Koneksi gagal saat menghubungi Cloud Authenticator."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
     }
 
     function cekStatusLoginAdmin() {
@@ -405,8 +419,8 @@
             document.getElementById('halaman-auth').classList.add('hidden');
             document.getElementById('halaman-dashboard').classList.remove('hidden');
             
-            // Ambil data konfigurasi cloud & list kelas
-            muatKonfigurasiSistemAwal();
+            // Muat konfigurasi dasar cloud
+            muatKonfigurasiSistemAwal(sesi.hak_kelas_id);
         } else {
             document.getElementById('halaman-auth').classList.remove('hidden');
             document.getElementById('halaman-dashboard').classList.add('hidden');
@@ -414,13 +428,12 @@
     }
 
     function keluarSistemAdmin() {
-        if(confirm("Apakah Anda yakin ingin keluar dari control panel admin?")) {
+        if(confirm("Apakah Anda yakin ingin keluar dari control panel?")) {
             localStorage.removeItem('sesi_admin_asaj');
             window.location.reload();
         }
     }
 
-    // Navigasi Tab Menu Kontrol
     function pindahTabAdmin(el, idTabTujuan) {
         document.querySelectorAll('.nav-link-custom').forEach(nav => nav.classList.remove('active'));
         document.querySelectorAll('.tab-konten-admin').forEach(tab => tab.classList.add('hidden'));
@@ -428,7 +441,6 @@
         el.classList.add('active');
         document.getElementById(idTabTujuan).classList.remove('hidden');
 
-        // Trigger reload data spesifik jika berpindah tab
         if(idTabTujuan === 'panel-peserta' && kelasAktifGlobal.id) {
             muatDataSiswaEksisting();
         } else if(idTabTujuan === 'panel-soal') {
@@ -438,8 +450,8 @@
         }
     }
 
-    // 2. LOGIKA CLOUD SYNC: MEMUAT CONFIG & DAFTAR KELAS
-    function muatKonfigurasiSistemAwal() {
+    // 2. LOGIKA CLOUD SYNC: MEMUAT CONFIG & FILTERING HAK AKSES KELAS GURU
+    function muatKonfigurasiSistemAwal(hakKelasId) {
         document.getElementById('loader-halaman').classList.remove('hidden');
         fetch(`${API_URL}?action=ambilConfigAwal`)
         .then(res => res.json())
@@ -452,17 +464,22 @@
                 listSemuaKelas = res.kelas || [];
                 document.getElementById('stat-total-kelas').innerText = listSemuaKelas.length;
                 
-                // Render data selektor kelas global
                 const selectKelas = document.getElementById('pilihKelasGlobal');
                 selectKelas.innerHTML = "";
                 
-                if(listSemuaKelas.length > 0) {
-                    listSemuaKelas.forEach(k => {
-                        selectKelas.innerHTML += `<option value="${k.id_kelas}">${k.nama_kelas}</option>`;
+                // Guru hanya akan melihat kelas miliknya sesuai token id_kelas di Data_Kelas
+                const kelasTersedia = listSemuaKelas.filter(k => k.id_kelas === hakKelasId);
+
+                if(kelasTersedia.length > 0) {
+                    kelasTersedia.forEach(k => {
+                        selectKelas.innerHTML += `<option value="${k.id_kelas}">${k.nama_kelas} [${k.id_kelas}]</option>`;
                     });
-                    kelasAktifGlobal = { id: listSemuaKelas[0].id_kelas, nama: listSemuaKelas[0].nama_kelas };
+                    kelasAktifGlobal = { id: kelasTersedia[0].id_kelas, nama: kelasTersedia[0].nama_kelas };
+                    
+                    // Auto-load data peserta untuk kelas guru tersebut
+                    muatDataSiswaEksisting();
                 } else {
-                    selectKelas.innerHTML = `<option value="">-- Belum Ada Kelas --</option>`;
+                    selectKelas.innerHTML = `<option value="">-- Hak Akses Kelas Kosong --</option>`;
                 }
             } else {
                 alert("Gagal memuat konfigurasi awal: " + res.message);
@@ -477,7 +494,6 @@
         const opsiTerpilih = listSemuaKelas.find(k => k.id_kelas === val);
         if(opsiTerpilih) {
             kelasAktifGlobal = { id: opsiTerpilih.id_kelas, nama: opsiTerpilih.nama_kelas };
-            // Auto refresh tab aktif saat ini jika membutuhkan parameter kelas
             if(!document.getElementById('panel-peserta').classList.contains('hidden')) muatDataSiswaEksisting();
             if(!document.getElementById('panel-nilai').classList.contains('hidden')) muatRekapNilai();
         }
@@ -485,7 +501,7 @@
 
     function buatKamarKelasBaru(e) {
         e.preventDefault();
-        const idKelas = document.getElementById('input-id-kelas').value.trim().replace(/\s+/g, '_');
+        const idKelas = document.getElementById('input-id-kelas').value.trim().toUpperCase();
         const namaKelas = document.getElementById('input-nama-kelas').value.trim();
         
         document.getElementById('loader-halaman').classList.remove('hidden');
@@ -503,7 +519,8 @@
             if(res.status === 'success') {
                 document.getElementById('input-id-kelas').value = "";
                 document.getElementById('input-nama-kelas').value = "";
-                muatKonfigurasiSistemAwal();
+                const sesi = JSON.parse(localStorage.getItem('sesi_admin_asaj'));
+                muatKonfigurasiSistemAwal(sesi.hak_kelas_id);
             }
         })
         .catch(() => alert("Gagal mendaftarkan kelas baru."))
@@ -551,6 +568,7 @@
 
     function kirimPesertaMassal() {
         if(dataSiswaMassalTerbaca.length === 0) return;
+        if(!kelasAktifGlobal.id) return alert("Pilih kelas aktif Anda terlebih dahulu!");
         document.getElementById('loader-halaman').classList.remove('hidden');
         
         fetch(API_URL, {
@@ -573,6 +591,7 @@
     }
 
     function muatDataSiswaEksisting() {
+        if(!kelasAktifGlobal.id) return;
         const tbody = document.getElementById('tabelPesertaBody');
         tbody.innerHTML = `<tr><td colspan="5" class="text-center"><i class="fa-solid fa-spinner animate-spin"></i> Menarik data siswa cloud...</td></tr>`;
         
@@ -787,6 +806,7 @@
     }
 
     function muatRekapNilai() {
+        if(!kelasAktifGlobal.id) return;
         const tbody = document.getElementById('tabelNilaiBody');
         tbody.innerHTML = `<tr><td colspan="6" class="text-center"><i class="fa-solid fa-spinner animate-spin"></i> Mengunduh lembar rekap nilai...</td></tr>`;
         
