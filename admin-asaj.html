@@ -1,136 +1,819 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - ASAJ SDN Ranuklindungan I</title>
-
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-
-  <style>
-    body {
-      font-family: 'Nunito', sans-serif;
-      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-    }
-    .font-kids-title { font-family: 'Fredoka One', cursive; }
-    .btn-3d { transition: all 0.1s ease; }
-    .btn-3d:active {
-      transform: translateY(6px) !important;
-      box-shadow: 0 2px 0 rgba(0,0,0,0.2) !important;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Kontrol Admin - ASAJ Berbasis Cloud</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .sidebar {
+            background-color: #1e293b;
+            min-height: 100vh;
+        }
+        .card-custom {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+        }
+        .nav-link-custom {
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+        .nav-link-custom:hover, .nav-link-custom.active {
+            color: #38bdf8;
+            background-color: #334155;
+            border-radius: 0.375rem;
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
+<body>
 
-<body class="min-h-screen flex flex-col justify-center items-center p-4 text-white relative">
-
-<!-- ================= LOADER ================= -->
-<div id="loader-halaman" class="hidden fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center z-50">
-  <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-</div>
-
-<!-- ================= POPUP PILIH KELAS ================= -->
-<div id="popupPilihKelas" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-40">
-  <div class="bg-slate-800 rounded-3xl max-w-3xl w-full p-8 text-center border-4 border-blue-500/50">
-    <h2 class="text-4xl font-kids-title text-blue-400 mb-2">Hiii.... Guru</h2>
-    <p class="text-slate-300 font-semibold mb-8">Silahkan pilih kelas</p>
-
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
-      <button onclick="verifikasiAksesKelas('KLS-04','Kelas 4')" class="btn-3d py-4 rounded-2xl font-bold text-black"
-        style="background:#FFB703;box-shadow:0 8px 0 #CC9202;">Kelas 4</button>
-
-      <button onclick="verifikasiAksesKelas('KLS-05','Kelas 5')" class="btn-3d py-4 rounded-2xl font-bold text-white"
-        style="background:#9B5DE5;box-shadow:0 8px 0 #7C4AB7;">Kelas 5</button>
-
-      <button onclick="verifikasiAksesKelas('KLS-06','Kelas 6')" class="btn-3d py-4 rounded-2xl font-bold text-slate-900"
-        style="background:#00F5D4;box-shadow:0 8px 0 #00C4AA;">Kelas 6</button>
-    </div>
+  <div id="loader-halaman" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
+      <i class="fa-solid fa-spinner animate-spin text-5xl text-blue-500 mb-3"></i>
+      <p class="text-white font-semibold">Memproses data ke cloud server...</p>
   </div>
-</div>
 
-<!-- ================= POPUP LOGIN ================= -->
-<div id="popupFormGuru" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center z-40">
-  <div class="bg-white text-slate-800 rounded-3xl max-w-md w-full p-6 border-4 border-indigo-500">
-    <h3 id="judulForm" class="text-xl font-bold text-indigo-600 mb-4 text-center">
-      Login Admin Guru
-    </h3>
-
-    <form id="formAdmin" onsubmit="prosesForm(event)" class="space-y-4">
-      <input type="hidden" id="form_id_kelas">
-      <input type="hidden" id="form_nama_kelas">
-
-      <div>
-        <label class="text-xs font-bold text-slate-500">Username</label>
-        <input id="form_username" required class="form-control">
+  <div id="halaman-auth" class="container min-vh-100 flex items-center justify-center">
+      <div class="card card-custom p-4 w-100" style="max-width: 450px;">
+          <div class="text-center mb-4">
+              <i class="fa-solid fa-user-shield text-5xl text-blue-500 mb-2"></i>
+              <h3 class="text-white fw-bold">ASAJ Cloud System</h3>
+              <p class="text-slate-400 text-sm">Masuk ke Panel Kendali Administrasi Pusat</p>
+          </div>
+          
+          <form id="form-login" onsubmit="prosesLoginAdmin(event)">
+              <div class="mb-3">
+                  <label class="form-label text-slate-300">Username Admin</label>
+                  <div class="input-group">
+                      <span class="input-group-text bg-slate-700 border-slate-600 text-slate-400"><i class="fa-solid fa-user"></i></span>
+                      <input type="text" id="login-username" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Masukkan username" required>
+                  </div>
+              </div>
+              <div class="mb-4">
+                  <label class="form-label text-slate-300">Password Sistem</label>
+                  <div class="input-group">
+                      <span class="input-group-text bg-slate-700 border-slate-600 text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                      <input type="password" id="login-password" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="••••••••" required>
+                  </div>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 py-2 font-semibold"><i class="fa-solid fa-sign-in-alt me-2"></i> Autentikasi Masuk</button>
+          </form>
       </div>
-
-      <div>
-        <label class="text-xs font-bold text-slate-500">Password</label>
-        <input type="password" id="form_password" required class="form-control">
-      </div>
-
-      <button class="btn btn-primary w-100 fw-bold">Masuk Panel Admin</button>
-    </form>
   </div>
-</div>
 
-<!-- ================= DASHBOARD ================= -->
-<div id="dashboardUtama" class="hidden w-full max-w-7xl bg-slate-800 rounded-3xl p-6 text-white mt-10">
-  <h1 id="txtSelamatDatang" class="text-3xl font-kids-title text-blue-400"></h1>
-  <p id="txtDetailKelas" class="text-slate-400 mb-4"></p>
-  <!-- ISI DASHBOARD ANDA TETAP -->
-</div>
 
-<script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxZO_VfKAa8VC8SpAr-jIhYa82wpeHqTH6iYVJV6uclV1YpYRL7QeqboB6v2Z6Apd1i-A/exec';
-let kelasAktifGlobal = {};
-let modeForm = 'LOGIN';
+  <div id="halaman-dashboard" class="container-fluid hidden">
+      <div class="row">
+          
+          <div class="col-md-3 col-lg-2 sidebar p-3 flex flex-col justify-between">
+              <div>
+                  <div class="flex items-center space-x-3 mb-4 px-2 py-3 border-b border-slate-700">
+                      <i class="fa-solid fa-server text-blue-400 text-2xl"></i>
+                      <div>
+                          <h6 class="text-white fw-bold m-0 text-sm">ASAJ CONTROL</h6>
+                          <span class="text-xs text-green-400"><i class="fa-solid fa-circle text-[8px] me-1 animate-pulse"></i>Terhubung</span>
+                      </div>
+                  </div>
+                  
+                  <nav class="nav flex-column space-y-1">
+                      <a class="nav-link nav-link-custom p-3 active" href="#" onclick="pindahTabAdmin(this, 'panel-beranda')">
+                          <i class="fa-solid fa-chart-pie me-2"></i> Beranda Utama
+                      </a>
+                      <a class="nav-link nav-link-custom p-3" href="#" onclick="pindahTabAdmin(this, 'panel-peserta')">
+                          <i class="fa-solid fa-users me-2"></i> Manajemen Peserta
+                      </a>
+                      <a class="nav-link nav-link-custom p-3" href="#" onclick="pindahTabAdmin(this, 'panel-soal')">
+                          <i class="fa-solid fa-book-bookmark me-2"></i> Bank Soal (Master)
+                      </a>
+                      <a class="nav-link nav-link-custom p-3" href="#" onclick="pindahTabAdmin(this, 'panel-nilai')">
+                          <i class="fa-solid fa-graduation-cap me-2"></i> Rekapitulasi Nilai
+                      </a>
+                  </nav>
+              </div>
 
-window.addEventListener('DOMContentLoaded', () => {
-  const sesi = localStorage.getItem('asaj_admin_session');
-  if (sesi) {
-    const d = JSON.parse(sesi);
-    kelasAktifGlobal = { id: d.id_kelas, nama: d.nama_kelas };
-    document.getElementById('popupPilihKelas').classList.add('hidden');
-    document.getElementById('dashboardUtama').classList.remove('hidden');
-    document.getElementById('txtSelamatDatang').innerText = `Selamat Datang, ${d.nama_guru}`;
-    document.getElementById('txtDetailKelas').innerText = d.nama_kelas;
-  }
-});
+              <div class="pt-3 border-t border-slate-700">
+                  <div class="text-xs text-slate-400 mb-2 px-2">Masuk sebagai: <span id="nama-admin-aktif" class="text-white fw-bold">Admin</span></div>
+                  <button onclick="keluarSistemAdmin()" class="btn btn-outline-danger btn-sm w-100"><i class="fa-solid fa-power-off me-2"></i> Keluar</button>
+              </div>
+          </div>
 
-function verifikasiAksesKelas(id, nama) {
-  kelasAktifGlobal = { id, nama };
-  document.getElementById('popupPilihKelas').classList.add('hidden');
-  document.getElementById('popupFormGuru').classList.remove('hidden');
-  document.getElementById('form_id_kelas').value = id;
-  document.getElementById('form_nama_kelas').value = nama;
-}
+          <div class="col-md-9 col-lg-10 p-4" style="min-height: 100vh; background-color: #0f172a;">
+              
+              <div class="card card-custom p-3 mb-4 flex flex-row items-center justify-between flex-wrap gap-3">
+                  <div>
+                      <h4 class="text-white font-bold m-0">Dashboard Pusat Administrasi Ujian</h4>
+                      <p class="text-slate-400 text-sm m-0">Kelola database ruang ujian, tokens, bank soal, dan hasil pengerjaan.</p>
+                  </div>
+                  <div class="flex items-center space-x-2">
+                      <label class="text-slate-300 text-sm fw-semibold whitespace-nowrap"><i class="fa-solid fa-door-open me-1"></i> Kamar / Kelas Aktif:</label>
+                      <select id="pilihKelasGlobal" class="form-select bg-slate-800 border-slate-600 text-white text-sm" style="width: 200px;" onchange="gantiKamarKelasGlobal()">
+                          </select>
+                  </div>
+              </div>
 
-function prosesForm(e) {
-  e.preventDefault();
-  const user = form_username.value;
-  const pass = form_password.value;
+              <div id="panel-beranda" class="tab-konten-admin">
+                  <div class="row g-3 mb-4">
+                      <div class="col-sm-6 col-lg-3">
+                          <div class="card card-custom p-3 flex flex-row items-center justify-between">
+                              <div>
+                                  <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Total Kamar Ujian</span>
+                                  <h3 class="text-white fw-bold mt-1" id="stat-total-kelas">0</h3>
+                              </div>
+                              <div class="p-3 bg-blue-500/10 rounded-lg text-blue-400 text-2xl"><i class="fa-solid fa-door-closed"></i></div>
+                          </div>
+                      </div>
+                      <div class="col-sm-6 col-lg-3">
+                          <div class="card card-custom p-3 flex flex-row items-center justify-between">
+                              <div>
+                                  <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Konfigurasi Cloud</span>
+                                  <h6 class="text-green-400 font-mono mt-2 truncate text-xs" id="stat-config-repo">Not Set</h6>
+                              </div>
+                              <div class="p-3 bg-green-500/10 rounded-lg text-green-400 text-2xl"><i class="fa-solid fa-cloud"></i></div>
+                          </div>
+                      </div>
+                  </div>
 
-  document.getElementById('loader-halaman').classList.remove('hidden');
+                  <div class="card card-custom p-4">
+                      <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-folder-plus text-blue-400 me-2"></i>Inisialisasi Pembuatan Ruang Kelas / Kamar Ujian Baru</h5>
+                      <form onsubmit="buatKamarKelasBaru(event)" class="row g-3">
+                          <div class="col-md-4">
+                              <label class="form-label text-slate-300">ID Kelas (Gunakan Huruf/Angka Tanpa Spasi)</label>
+                              <input type="text" id="input-id-kelas" class="form-control bg-slate-800 border-slate-600 text-white font-mono" placeholder="Contoh: XII_RPL_1" required>
+                          </div>
+                          <div class="col-md-5">
+                              <label class="form-label text-slate-300">Nama Kelas Panjang / Deskripsi Resmi</label>
+                              <input type="text" id="input-nama-kelas" class="form-control bg-slate-800 border-slate-600 text-white" placeholder="Contoh: KELAS XII REKAYASA PERANGKAT LUNAK 1" required>
+                          </div>
+                          <div class="col-md-3 flex items-end">
+                              <button type="submit" class="btn btn-primary w-100 py-2 font-bold"><i class="fa-solid fa-plus me-1"></i> Daftarkan Kelas</button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
 
-  fetch(`${API_URL}?action=loginGuru&id_kelas=${kelasAktifGlobal.id}&username=${user}&password=${pass}`)
-    .then(r => r.json())
-    .then(r => {
-      document.getElementById('loader-halaman').classList.add('hidden');
-      if (r.status === 'success') {
-        localStorage.setItem('asaj_admin_session', JSON.stringify({
-          id_kelas: kelasAktifGlobal.id,
-          nama_kelas: kelasAktifGlobal.nama,
-          nama_guru: r.nama_guru
-        }));
-        location.reload();
-      } else {
-        alert(r.message);
-      }
+              <div id="panel-peserta" class="tab-konten-admin hidden">
+                  <div class="row g-4">
+                      <div class="col-lg-4">
+                          <div class="card card-custom p-4 h-100">
+                              <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-file-excel text-green-400 me-2"></i>Impor Peserta (Excel)</h5>
+                              <p class="text-slate-400 text-xs mb-3">Wajib menggunakan tabel Excel dengan judul kolom baris pertama: <code class="text-pink-400 font-mono">nama_lengkap</code>.</p>
+                              <div class="mb-3">
+                                  <input type="file" id="excelPesertaInput" accept=".xlsx, .xls" class="form-control bg-slate-800 border-slate-600 text-white text-sm" onchange="bacaExcelPeserta()">
+                              </div>
+                              <button id="btnSimpanPeserta" onclick="kirimPesertaMassal()" class="btn btn-success w-100 font-bold py-2" disabled>
+                                  <i class="fa-solid fa-cloud-arrow-up me-2"></i> Inject Siswa ke Cloud
+                              </button>
+                          </div>
+                      </div>
+                      <div class="col-lg-8">
+                          <div class="card card-custom p-4">
+                              <div class="flex justify-between items-center mb-3">
+                                  <h5 class="text-white fw-bold m-0"><i class="fa-solid fa-list-ol text-blue-400 me-2"></i>Daftar Peserta di Kamar Terpilih</h5>
+                                  <button onclick="muatDataSiswaEksisting()" class="btn btn-dark btn-sm text-xs text-slate-300"><i class="fa-solid fa-rotate me-1"></i> Refresh</button>
+                              </div>
+                              <div class="table-responsive" style="max-height: 400px;">
+                                  <table class="table table-dark table-striped align-middle text-sm m-0">
+                                      <thead>
+                                          <tr class="border-slate-700 text-slate-400 text-xs uppercase">
+                                              <th>ID SISWA</th>
+                                              <th>NAMA LENGKAP</th>
+                                              <th>USERNAME</th>
+                                              <th>TOKEN LOGIN</th>
+                                              <th>STATUS</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody id="tabelPesertaBody">
+                                          <tr><td colspan="5" class="text-center text-muted">Pilih kelas terlebih dahulu atau lakukan sinkronisasi.</td></tr>
+                                      </tbody>
+                                  </table>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div id="panel-soal" class="tab-konten-admin hidden">
+                  <div class="card card-custom p-3 mb-4 flex flex-row items-center justify-between flex-wrap gap-2">
+                      <div class="flex items-center space-x-2">
+                          <label class="text-warning text-sm fw-bold whitespace-nowrap"><i class="fa-solid fa-database me-1"></i> Pilih Database Mapel:</label>
+                          <select id="pilihMapelDatabase" class="form-select bg-slate-800 border-slate-600 text-white text-sm" style="width: 250px;" onchange="muatBankSoal()">
+                              <option value="MATEMATIKA">MATEMATIKA</option>
+                              <option value="BAHASA_INDONESIA">BAHASA INDONESIA</option>
+                              <option value="BAHASA_INGGRIS">BAHASA INGGRIS</option>
+                              <option value="INFORMATIKA">INFORMATIKA</option>
+                              <option value="PENDIDIKAN_AGAMA">PENDIDIKAN AGAMA</option>
+                              <option value="PANCASILA">PANCASILA</option>
+                              <option value="SEJARAH">SEJARAH</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <div class="row g-4">
+                      <div class="col-md-6">
+                          <div class="card card-custom p-4">
+                              <h5 class="text-white fw-bold mb-2"><i class="fa-solid fa-file-shield text-emerald-400 me-2"></i>Impor Bank Soal (Excel Massal)</h5>
+                              <p class="text-slate-400 text-xs mb-3">Kolom wajib di file Excel: <code class="text-amber-400 font-mono">mata_pelajaran, nomor_soal, jenis_soal, pertanyaan, pilihan_a, pilihan_b, pilihan_c, pilihan_d, kunci_jawaban, bobot_nilai</code></p>
+                              <div class="input-group mb-3">
+                                  <input type="file" id="excelSoalInput" accept=".xlsx, .xls" class="form-control bg-slate-800 border-slate-600 text-white text-sm" onchange="bacaExcelSoal()">
+                              </div>
+                              <button id="btnSimpanSoalMassal" onclick="kirimSoalMassal()" class="btn btn-success w-100 font-bold" disabled><i class="fa-solid fa-upload me-2"></i> Eksekusi Impor Massal</button>
+                          </div>
+                      </div>
+
+                      <div class="col-md-6">
+                          <div class="card card-custom p-4">
+                              <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-pen-to-square text-blue-400 me-2"></i>Entri Butir Soal Manual</h5>
+                              <form id="formSoalTunggal" onsubmit="simpanSoalTunggal(event)" class="row g-2 text-xs">
+                                  <div class="col-3">
+                                      <label class="text-slate-300">No. Soal</label>
+                                      <input type="number" id="soalNomor" class="form-control bg-slate-800 border-slate-600 text-white p-1" required>
+                                  </div>
+                                  <div class="col-5">
+                                      <label class="text-slate-300">Mapel Terikat</label>
+                                      <select id="soalMapel" class="form-select bg-slate-800 border-slate-600 text-white p-1">
+                                          <option value="MATEMATIKA">MATEMATIKA</option>
+                                          <option value="BAHASA_INDONESIA">BAHASA INDONESIA</option>
+                                          <option value="BAHASA_INGGRIS">BAHASA INGGRIS</option>
+                                          <option value="INFORMATIKA">INFORMATIKA</option>
+                                          <option value="PENDIDIKAN_AGAMA">PENDIDIKAN AGAMA</option>
+                                          <option value="PANCASILA">PANCASILA</option>
+                                          <option value="SEJARAH">SEJARAH</option>
+                                      </select>
+                                  </div>
+                                  <div class="col-4">
+                                      <label class="text-slate-300">Jenis Soal</label>
+                                      <select id="soalJenis" class="form-select bg-slate-800 border-slate-600 text-white p-1" onchange="aturFormPilihan()">
+                                          <option value="PILIHAN GANDA">PILIHAN GANDA</option>
+                                          <option value="ISIAN SINGKAT">ISIAN SINGKAT</option>
+                                      </select>
+                                  </div>
+                                  <div class="col-12">
+                                      <label class="text-slate-300">Narasi / Teks Pertanyaan</label>
+                                      <textarea id="soalPertanyaan" class="form-control bg-slate-800 border-slate-600 text-white p-1" rows="2" required></textarea>
+                                  </div>
+                                  
+                                  <div id="containerOpsiPG" class="row g-2 m-0 p-0 col-12">
+                                      <div class="col-6">
+                                          <label class="text-slate-400">Pilihan A</label>
+                                          <input type="text" id="soalOpsiA" class="form-control bg-slate-800 border-slate-600 text-white p-1">
+                                      </div>
+                                      <div class="col-6">
+                                          <label class="text-slate-400">Pilihan B</label>
+                                          <input type="text" id="soalOpsiB" class="form-control bg-slate-800 border-slate-600 text-white p-1">
+                                      </div>
+                                      <div class="col-6">
+                                          <label class="text-slate-400">Pilihan C</label>
+                                          <input type="text" id="soalOpsiC" class="form-control bg-slate-800 border-slate-600 text-white p-1">
+                                      </div>
+                                      <div class="col-6">
+                                          <label class="text-slate-400">Pilihan D</label>
+                                          <input type="text" id="soalOpsiD" class="form-control bg-slate-800 border-slate-600 text-white p-1">
+                                      </div>
+                                  </div>
+
+                                  <div class="col-6">
+                                      <label class="text-green-400 fw-bold">Kunci Jawaban</label>
+                                      <input type="text" id="soalKunci" class="form-control bg-slate-800 border-slate-600 text-white p-1" placeholder="A/B/C/D atau kata isian" required>
+                                  </div>
+                                  <div class="col-6">
+                                      <label class="text-slate-300">Bobot Nilai</label>
+                                      <input type="number" id="soalBobot" class="form-control bg-slate-800 border-slate-600 text-white p-1" value="2" required>
+                                  </div>
+                                  <div class="col-12 mt-2">
+                                      <button type="submit" class="btn btn-primary btn-sm w-100 font-bold"><i class="fa-solid fa-floppy-disk me-1"></i> Simpan Record Tunggal</button>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+
+                      <div class="col-12">
+                          <div class="card card-custom p-4">
+                              <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-database text-amber-400 me-2"></i>Viewer Data Master Soal Cloud</h5>
+                              
+                              <input type="file" id="inputFileGambarDinamis" class="hidden" accept="image/*" onchange="prosesUnggahGambarDinamis(this)">
+
+                              <div class="table-responsive">
+                                  <table class="table table-dark table-striped align-middle text-sm m-0">
+                                      <thead>
+                                          <tr class="border-slate-700 text-slate-400 text-xs uppercase text-center">
+                                              <th style="width: 60px;">NO</th>
+                                              <th style="width: 100px;">ID SOAL</th>
+                                              <th style="width: 130px;">JENIS</th>
+                                              <th class="text-start">PERTANYAAN & OPSI JAWABAN</th>
+                                              <th style="width: 80px;">KUNCI</th>
+                                              <th style="width: 70px;">BOBOT</th>
+                                              <th style="width: 160px;">MEDIA GAMBAR</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody id="tabelSoalBody">
+                                          <tr><td colspan="7" class="text-center text-muted">Silahkan pilih database matapelajaran di atas.</td></tr>
+                                      </tbody>
+                                  </table>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div id="panel-nilai" class="tab-konten-admin hidden">
+                  <div class="card card-custom p-4">
+                      <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+                          <div>
+                              <h5 class="text-white fw-bold m-0"><i class="fa-solid fa-square-poll-vertical text-cyan-400 me-2"></i>Lembar Transkrip Rekap Nilai Peserta</h5>
+                              <p class="text-slate-400 text-xs m-0">Menampilkan skor murni hasil koreksi server ujian secara langsung.</p>
+                          </div>
+                          <button onclick="muatRekapNilai()" class="btn btn-info btn-sm font-bold text-slate-900"><i class="fa-solid fa-sync me-1"></i> Sinkronisasi Nilai</button>
+                      </div>
+                      <div class="table-responsive">
+                          <table class="table table-dark table-striped align-middle text-sm m-0">
+                              <thead>
+                                  <tr class="border-slate-700 text-slate-400 text-xs uppercase">
+                                      <th>WAKTU SELESAI</th>
+                                      <th>ID SISWA</th>
+                                      <th>NAMA LENGKAP PESERTA</th>
+                                      <th>MATA PELAJARAN</th>
+                                      <th class="text-center">SKOR AKHIR</th>
+                                      <th>STATUS</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="tabelNilaiBody">
+                                  <tr><td colspan="6" class="text-center text-muted">Belum melakukan sinkronisasi rekap nilai cloud.</td></tr>
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </div>
+
+          </div>
+      </div>
+  </div>
+
+  <script>
+    // MASUKKAN ALAMAT URL WEB APP SCRIPT GOOGLE SHEETS ANDA DI SINI
+    const API_URL = "https://script.google.com/macros/s/AKfycbwuzSskmO_G97yNsc_TCHmFCHG6OymXpG5n7W6bL_N_I1qf6gW_0M3mG3H2Y3g4z5A/exec";
+    
+    // Variabel Konfigurasi Terhubung Otomatis dari Cloud Config
+    let GITHUB_USER = "";
+    let GITHUB_REPO = "";
+    
+    // State Global Aplikasi
+    let kelasAktifGlobal = { id: "", nama: "" };
+    let listSemuaKelas = [];
+    let targetUploadGambar = { idSoal: "", sheetName: "" };
+
+    // Jalankan pertama kali saat dokumen siap
+    document.addEventListener("DOMContentLoaded", function() {
+        cekStatusLoginAdmin();
     });
-}
-</script>
+
+    // 1. SISTEM AUTENTIKASI: LOGIN LANGSUNG TANPA REGISTRASI
+    function prosesLoginAdmin(e) {
+        e.preventDefault();
+        const user = document.getElementById('login-username').value.trim();
+        const pass = document.getElementById('login-password').value;
+
+        // Validasi Akun Masuk (Sesuaikan dengan kredensial yang Anda inginkan)
+        if (user === "admin" && pass === "asaj2026") {
+            const dataSesi = {
+                username: user,
+                nama_lengkap: "Administrator Utama",
+                loginAt: new Date().getTime()
+            };
+            localStorage.setItem('sesi_admin_asaj', JSON.stringify(dataSesi));
+            alert("Autentikasi Berhasil! Selamat datang di Panel Admin.");
+            cekStatusLoginAdmin();
+        } else {
+            alert("Username atau Password salah! Akses ditolak.");
+        }
+    }
+
+    function cekStatusLoginAdmin() {
+        const dataSesi = localStorage.getItem('sesi_admin_asaj');
+        if(dataSesi) {
+            const sesi = JSON.parse(dataSesi);
+            document.getElementById('nama-admin-aktif').innerText = sesi.nama_lengkap;
+            document.getElementById('halaman-auth').classList.add('hidden');
+            document.getElementById('halaman-dashboard').classList.remove('hidden');
+            
+            // Ambil data konfigurasi cloud & list kelas
+            muatKonfigurasiSistemAwal();
+        } else {
+            document.getElementById('halaman-auth').classList.remove('hidden');
+            document.getElementById('halaman-dashboard').classList.add('hidden');
+        }
+    }
+
+    function keluarSistemAdmin() {
+        if(confirm("Apakah Anda yakin ingin keluar dari control panel admin?")) {
+            localStorage.removeItem('sesi_admin_asaj');
+            window.location.reload();
+        }
+    }
+
+    // Navigasi Tab Menu Kontrol
+    function pindahTabAdmin(el, idTabTujuan) {
+        document.querySelectorAll('.nav-link-custom').forEach(nav => nav.classList.remove('active'));
+        document.querySelectorAll('.tab-konten-admin').forEach(tab => tab.classList.add('hidden'));
+        
+        el.classList.add('active');
+        document.getElementById(idTabTujuan).classList.remove('hidden');
+
+        // Trigger reload data spesifik jika berpindah tab
+        if(idTabTujuan === 'panel-peserta' && kelasAktifGlobal.id) {
+            muatDataSiswaEksisting();
+        } else if(idTabTujuan === 'panel-soal') {
+            muatBankSoal();
+        } else if(idTabTujuan === 'panel-nilai' && kelasAktifGlobal.id) {
+            muatRekapNilai();
+        }
+    }
+
+    // 2. LOGIKA CLOUD SYNC: MEMUAT CONFIG & DAFTAR KELAS
+    function muatKonfigurasiSistemAwal() {
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        fetch(`${API_URL}?action=ambilConfigAwal`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success') {
+                GITHUB_USER = res.config.github_user || "username-default";
+                GITHUB_REPO = res.config.github_repo || "repo-default";
+                document.getElementById('stat-config-repo').innerText = `${GITHUB_USER}/${GITHUB_REPO}`;
+                
+                listSemuaKelas = res.kelas || [];
+                document.getElementById('stat-total-kelas').innerText = listSemuaKelas.length;
+                
+                // Render data selektor kelas global
+                const selectKelas = document.getElementById('pilihKelasGlobal');
+                selectKelas.innerHTML = "";
+                
+                if(listSemuaKelas.length > 0) {
+                    listSemuaKelas.forEach(k => {
+                        selectKelas.innerHTML += `<option value="${k.id_kelas}">${k.nama_kelas}</option>`;
+                    });
+                    kelasAktifGlobal = { id: listSemuaKelas[0].id_kelas, nama: listSemuaKelas[0].nama_kelas };
+                } else {
+                    selectKelas.innerHTML = `<option value="">-- Belum Ada Kelas --</option>`;
+                }
+            } else {
+                alert("Gagal memuat konfigurasi awal: " + res.message);
+            }
+        })
+        .catch(() => alert("Koneksi gagal saat menghubungi Cloud App Script."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+    }
+
+    function gantiKamarKelasGlobal() {
+        const val = document.getElementById('pilihKelasGlobal').value;
+        const opsiTerpilih = listSemuaKelas.find(k => k.id_kelas === val);
+        if(opsiTerpilih) {
+            kelasAktifGlobal = { id: opsiTerpilih.id_kelas, nama: opsiTerpilih.nama_kelas };
+            // Auto refresh tab aktif saat ini jika membutuhkan parameter kelas
+            if(!document.getElementById('panel-peserta').classList.contains('hidden')) muatDataSiswaEksisting();
+            if(!document.getElementById('panel-nilai').classList.contains('hidden')) muatRekapNilai();
+        }
+    }
+
+    function buatKamarKelasBaru(e) {
+        e.preventDefault();
+        const idKelas = document.getElementById('input-id-kelas').value.trim().replace(/\s+/g, '_');
+        const namaKelas = document.getElementById('input-nama-kelas').value.trim();
+        
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'buatKelasBaru',
+                id_kelas: idKelas,
+                nama_kelas: namaKelas
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert(res.message);
+            if(res.status === 'success') {
+                document.getElementById('input-id-kelas').value = "";
+                document.getElementById('input-nama-kelas').value = "";
+                muatKonfigurasiSistemAwal();
+            }
+        })
+        .catch(() => alert("Gagal mendaftarkan kelas baru."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+    }
+
+    // 3. PROSES DATA EXCEL & MANAJEMEN DATA SEPERTI KODE SAMBUNGAN ANDA
+    let dataSiswaMassalTerbaca = [];
+    function bacaExcelPeserta() {
+        const fileInput = document.getElementById('excelPesertaInput');
+        if(!fileInput.files || fileInput.files.length === 0) return;
+        
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const arrBuffer = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(arrBuffer, {type: 'array'});
+                const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('nama_lengkap')) {
+                    return alert("Format file Excel salah! Pastikan baris pertama memiliki kolom 'nama_lengkap'.");
+                }
+                
+                dataSiswaMassalTerbaca = sheetJson;
+                const tbody = document.getElementById('tabelPesertaBody');
+                tbody.innerHTML = "";
+                
+                sheetJson.forEach(siswa => {
+                    tbody.innerHTML += `<tr>
+                        <td>[PROSES]</td>
+                        <td>${siswa.nama_lengkap.toUpperCase()}</td>
+                        <td>[OTOMATIS]</td>
+                        <td>[OTOMATIS]</td>
+                        <td><span class="badge bg-warning text-dark">READY</span></td>
+                    </tr>`;
+                });
+                document.getElementById('btnSimpanPeserta').disabled = false;
+            } catch(err) {
+                alert("Gagal membaca file excel: " + err.toString());
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function kirimPesertaMassal() {
+        if(dataSiswaMassalTerbaca.length === 0) return;
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'simpanSiswaMassal',
+                id_kelas: kelasAktifGlobal.id,
+                data_siswa: dataSiswaMassalTerbaca
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert(res.message);
+            document.getElementById('excelPesertaInput').value = "";
+            document.getElementById('btnSimpanPeserta').disabled = true;
+            muatDataSiswaEksisting();
+        })
+        .catch(() => alert("Koneksi gagal saat menyimpan siswa."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+    }
+
+    function muatDataSiswaEksisting() {
+        const tbody = document.getElementById('tabelPesertaBody');
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center"><i class="fa-solid fa-spinner animate-spin"></i> Menarik data siswa cloud...</td></tr>`;
+        
+        fetch(`${API_URL}?action=ambilDataSiswa&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success' && res.data.length > 0) {
+                tbody.innerHTML = "";
+                res.data.forEach(siswa => {
+                    tbody.innerHTML += `<tr>
+                        <td class="font-mono text-xs text-blue-400">${siswa.id_siswa}</td>
+                        <td class="fw-bold">${siswa.nama_lengkap}</td>
+                        <td class="text-warning">${siswa.username}</td>
+                        <td class="font-mono text-green-400 fw-bold">${siswa.token}</td>
+                        <td><span class="badge bg-success">${siswa.status}</span></td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Belum ada siswa di kelas ini. Silahkan impor Excel.</td></tr>`;
+            }
+        })
+        .catch(() => {
+            tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Gagal sinkronisasi data peserta.</td></tr>`;
+        });
+    }
+
+    function aturFormPilihan() {
+        const jenis = document.getElementById('soalJenis').value;
+        const container = document.getElementById('containerOpsiPG');
+        if(jenis === 'ISIAN SINGKAT') {
+            container.classList.add('hidden');
+        } else {
+            container.classList.remove('hidden');
+        }
+    }
+
+    let dataSoalMassalTerbaca = [];
+    function bacaExcelSoal() {
+        const fileInput = document.getElementById('excelSoalInput');
+        if(!fileInput.files || fileInput.files.length === 0) return alert("Pilih file excel!");
+        
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const arrBuffer = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(arrBuffer, {type: 'array'});
+                const sheetJson = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+                
+                if(sheetJson.length === 0 || !sheetJson[0].hasOwnProperty('pertanyaan') || !sheetJson[0].hasOwnProperty('mata_pelajaran')) {
+                    return alert("Format salah! Wajib memiliki kolom 'mata_pelajaran' dan 'pertanyaan'.");
+                }
+                
+                dataSoalMassalTerbaca = sheetJson;
+                document.getElementById('btnSimpanSoalMassal').disabled = false;
+                alert(`Terdeteksi ${sheetJson.length} butir soal siap impor.`);
+            } catch(err) {
+                alert("Gagal memproses file excel bank soal: " + err.toString());
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function kirimSoalMassal() {
+        if(dataSoalMassalTerbaca.length === 0) return;
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'simpanSoalMassal',
+                id_kelas: kelasAktifGlobal.id,
+                data_soal: dataSoalMassalTerbaca
+            })
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert(res.message);
+            document.getElementById('excelSoalInput').value = "";
+            document.getElementById('btnSimpanSoalMassal').disabled = true;
+            muatBankSoal();
+        })
+        .catch(() => alert("Gagal menyimpan bank soal massal."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+    }
+
+    function simpanSoalTunggal(e) {
+        e.preventDefault();
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        
+        const payload = {
+            action: 'tambahSoalTunggal',
+            data_soal: {
+                id_kelas: kelasAktifGlobal.id,
+                nomor_soal: document.getElementById('soalNomor').value,
+                mata_pelajaran: document.getElementById('soalMapel').value,
+                jenis_soal: document.getElementById('soalJenis').value,
+                pertanyaan: document.getElementById('soalPertanyaan').value,
+                pilihan_a: document.getElementById('soalOpsiA').value,
+                pilihan_b: document.getElementById('soalOpsiB').value,
+                pilihan_c: document.getElementById('soalOpsiC').value,
+                pilihan_d: document.getElementById('soalOpsiD').value,
+                kunci_jawaban: document.getElementById('soalKunci').value,
+                bobot_nilai: document.getElementById('soalBobot').value,
+                gambar: ''
+            }
+        };
+
+        fetch(API_URL, {
+            method: 'POST',
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(res => {
+            alert(res.message);
+            document.getElementById('formSoalTunggal').reset();
+            aturFormPilihan();
+            muatBankSoal();
+        })
+        .catch(() => alert("Gagal menyimpan soal manual."))
+        .finally(() => document.getElementById('loader-halaman').classList.add('hidden'));
+    }
+
+    function muatBankSoal() {
+        const mapel = document.getElementById('pilihMapelDatabase').value;
+        const tbody = document.getElementById('tabelSoalBody');
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center"><i class="fa-solid fa-spinner animate-spin"></i> Membaca tabel Master_${mapel}...</td></tr>`;
+        
+        fetch(`${API_URL}?action=ambilBankSoal&mata_pelajaran=${encodeURIComponent(mapel)}&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success' && res.data.length > 0) {
+                tbody.innerHTML = "";
+                res.data.forEach(soal => {
+                    let opsiHtml = "";
+                    if(soal.jenis_soal === 'PILIHAN GANDA') {
+                        opsiHtml = `<div class="mt-1 text-slate-400">
+                            A. ${soal.pilihan_a}<br>B. ${soal.pilihan_b}<br>C. ${soal.pilihan_c}<br>D. ${soal.pilihan_d}
+                        </div>`;
+                    }
+                    
+                    let imageSection = "";
+                    if(soal.gambar && soal.gambar.trim() !== "") {
+                        let linkGambarReal = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/main/assets/img/${soal.gambar}`;
+                        imageSection = `<div class="mb-2"><img src="${linkGambarReal}" class="rounded border border-slate-600 max-h-24 mx-auto"></div>
+                                        <button class="btn btn-dark btn-xs text-xs font-bold px-2 py-1 text-warning" onclick="pemicuKlikUploadGambar('${soal.id_soal}', '${mapel}')">🔄 Ganti Gambar</button>`;
+                    } else {
+                        imageSection = `<button class="btn btn-outline-dashed border-secondary btn-sm text-xs py-1 text-slate-400 hover:text-white" onclick="pemicuKlikUploadGambar('${soal.id_soal}', '${mapel}')">➕ Unggah Gambar</button>`;
+                    }
+
+                    tbody.innerHTML += `<tr>
+                        <td class="text-center fw-bold text-amber-400">${soal.nomor_soal}</td>
+                        <td class="font-mono text-xs text-slate-400">${soal.id_soal}</td>
+                        <td class="text-center"><span class="badge bg-slate-700 text-xs">${soal.jenis_soal}</span></td>
+                        <td>
+                            <div class="fw-semibold text-white">${soal.pertanyaan}</div>
+                            ${opsiHtml}
+                        </td>
+                        <td class="text-center fw-bold text-success">${soal.kunci_jawaban}</td>
+                        <td class="text-center font-mono">${soal.bobot_nilai}</td>
+                        <td class="text-center">${imageSection}</td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted">Belum ada bank soal terpasang untuk mapel ${mapel}.</td></tr>`;
+            }
+        })
+        .catch(() => {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger">Gagal memuat database bank soal dari cloud server.</td></tr>`;
+        });
+    }
+
+    function pemicuKlikUploadGambar(idSoal, mapel) {
+        targetUploadGambar = { idSoal: idSoal, sheetName: mapel };
+        document.getElementById('inputFileGambarDinamis').click();
+    }
+
+    function prosesUnggahGambarDinamis(el) {
+        if(!el.files || el.files.length === 0) return;
+        const file = el.files[0];
+        
+        const namaGambarBaru = `img-${targetUploadGambar.idSoal}-${new Date().getTime()}.${file.name.split('.').pop()}`;
+        document.getElementById('loader-halaman').classList.remove('hidden');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const rawBase64 = e.target.result.split(',')[1];
+            
+            fetch(API_URL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'proxyUploadGithub',
+                    path: `assets/img/${namaGambarBaru}`,
+                    content: rawBase64,
+                    id_soal: targetUploadGambar.idSoal,
+                    mata_pelajaran: targetUploadGambar.sheetName,
+                    nama_gambar: namaGambarBaru
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                alert(res.message);
+                muatBankSoal();
+            })
+            .catch(() => alert("Gagal mengirim data gambar ke proxy cloud."))
+            .finally(() => {
+                document.getElementById('loader-halaman').classList.add('hidden');
+                el.value = "";
+            });
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function muatRekapNilai() {
+        const tbody = document.getElementById('tabelNilaiBody');
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center"><i class="fa-solid fa-spinner animate-spin"></i> Mengunduh lembar rekap nilai...</td></tr>`;
+        
+        fetch(`${API_URL}?action=ambilRekapNilai&id_kelas=${encodeURIComponent(kelasAktifGlobal.id)}`)
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === 'success' && res.data.length > 0) {
+                tbody.innerHTML = "";
+                res.data.forEach(item => {
+                    let tgl = new Date(item.timestamp).toLocaleString('id-ID');
+                    tbody.innerHTML += `<tr>
+                        <td class="text-slate-400 text-xs">${tgl}</td>
+                        <td class="font-mono text-xs">${item.id_siswa}</td>
+                        <td class="fw-bold text-white">${item.nama_lengkap}</td>
+                        <td class="text-warning fw-bold text-xs">${item.mata_pelajaran}</td>
+                        <td class="text-center fw-bold text-blue-400">${item.nilai_akhir}</td>
+                        <td><span class="badge bg-success">SELESAI</span></td>
+                    </tr>`;
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">Belum ada siswa yang menyelesaikan ujian di kelas ini.</td></tr>`;
+            }
+        })
+        .catch(() => {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">Gagal memuat rekap nilai.</td></tr>`;
+        });
+    }
+  </script>
 </body>
 </html>
