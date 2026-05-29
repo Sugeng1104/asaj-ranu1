@@ -10,13 +10,16 @@
   --secondary:#f1f5f9;
   --accent:#fde047;
 }
+
 *{box-sizing:border-box}
+
 body{
   margin:0;
-  font-family:Segoe UI,Arial,sans-serif;
+  font-family:Segoe UI, Arial, sans-serif;
   background:#f8fafc;
   color:#111827;
 }
+
 header{
   background:var(--primary);
   color:#fff;
@@ -24,24 +27,29 @@ header{
   font-size:20px;
   font-weight:600;
 }
+
 .container{
   padding:24px;
 }
+
 .toolbar{
   display:flex;
   gap:16px;
   align-items:center;
   margin-bottom:18px;
 }
+
 select{
   padding:6px 10px;
   font-size:14px;
 }
+
 .summary{
   display:flex;
   gap:16px;
   margin-bottom:18px;
 }
+
 .card{
   background:#fff;
   padding:14px 22px;
@@ -49,32 +57,39 @@ select{
   box-shadow:0 2px 6px rgba(0,0,0,.08);
   font-size:15px;
 }
+
 table{
   width:100%;
   border-collapse:collapse;
   background:#fff;
   font-size:13px;
+  border:2px solid #000; /* BORDER LUAR HITAM */
 }
-th,td{
-  border:1px solid #e5e7eb;
+
+th, td{
+  border:1px solid #000; /* GARIS DALAM HITAM */
   padding:6px;
   text-align:center;
 }
+
 thead th{
   background:var(--secondary);
   font-weight:600;
 }
-.rank-1,.rank-2,.rank-3{
+
+.rank-1, .rank-2, .rank-3{
   background:var(--accent);
   font-weight:700;
 }
+
 td:last-child{
   font-weight:700;
 }
+
 footer{
   margin-top:18px;
   font-size:12px;
-  color:#6b7280;
+  color:#374151;
 }
 </style>
 </head>
@@ -93,8 +108,12 @@ footer{
   </div>
 
   <div class="summary">
-    <div class="card">Jumlah Siswa: <b id="totalSiswa">0</b></div>
-    <div class="card">Rata-rata Nilai: <b id="rataGlobal">0</b></div>
+    <div class="card">
+      Jumlah Siswa: <b id="totalSiswa">0</b>
+    </div>
+    <div class="card">
+      Rata-rata Nilai: <b id="rataGlobal">0</b>
+    </div>
   </div>
 
   <table id="tabel">
@@ -124,41 +143,52 @@ footer{
   </table>
 
   <footer>
-    Data ditampilkan berdasarkan ujian dengan status <b>Selesai</b>
+    Data ditampilkan dari ujian dengan status <b>SELESAI</b>
   </footer>
 
 </div>
 
 <script>
+/* =========================
+   KONFIGURASI API
+========================= */
 const API_URL =
 "https://script.google.com/macros/s/AKfycbycogxYTBE7jofYCJJgXh2Do3ZM2DGsxqPxfHcJOGpolEiuoguR078Oxy1kvzsN8xmb/exec";
 
-const filterKelas = document.getElementById("filterKelas");
-const tbody = document.querySelector("#tabel tbody");
-const totalSiswaEl = document.getElementById("totalSiswa");
-const rataGlobalEl = document.getElementById("rataGlobal");
+const filterKelas   = document.getElementById("filterKelas");
+const tbody         = document.querySelector("#tabel tbody");
+const totalSiswaEl  = document.getElementById("totalSiswa");
+const rataGlobalEl  = document.getElementById("rataGlobal");
 
-let allData = [];
-
+/* =========================
+   LOAD DATA
+========================= */
 function loadData(){
   const kelas = filterKelas.value;
   const url = kelas ? `${API_URL}?kelas=${kelas}` : API_URL;
 
   fetch(url)
-    .then(r=>r.json())
-    .then(res=>{
+    .then(r => r.json())
+    .then(res => {
       totalSiswaEl.textContent = res.total_siswa;
       rataGlobalEl.textContent = res.rata_global;
       renderTable(res.data);
       setupFilter(res.data);
+    })
+    .catch(err => {
+      console.error("Gagal load data:", err);
     });
 }
 
+/* =========================
+   RENDER TABEL
+========================= */
 function renderTable(data){
   tbody.innerHTML = "";
-  data.forEach(s=>{
+  data.forEach(s => {
     const tr = document.createElement("tr");
-    if(s.rank<=3) tr.classList.add("rank-"+s.rank);
+    if (s.rank <= 3) tr.classList.add("rank-" + s.rank);
+
     tr.innerHTML = `
       <td>${s.rank}</td>
       <td>${s.id_kelas}</td>
@@ -180,17 +210,23 @@ function renderTable(data){
   });
 }
 
+/* =========================
+   FILTER KELAS
+========================= */
 function setupFilter(data){
-  if(filterKelas.options.length>1) return;
-  const kelasSet=new Set(data.map(d=>d.id_kelas));
-  kelasSet.forEach(k=>{
-    const o=document.createElement("option");
-    o.value=k; o.textContent=k;
-    filterKelas.appendChild(o);
+  if (filterKelas.options.length > 1) return;
+  const kelasSet = new Set(data.map(d => d.id_kelas));
+  kelasSet.forEach(k => {
+    const op = document.createElement("option");
+    op.value = k;
+    op.textContent = k;
+    filterKelas.appendChild(op);
   });
 }
 
-filterKelas.addEventListener("change",loadData);
+filterKelas.addEventListener("change", loadData);
+
+/* INIT */
 loadData();
 </script>
 
