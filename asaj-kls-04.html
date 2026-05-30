@@ -78,7 +78,7 @@ Masuk Ruang Ujian
 <div class="w-full h-full bg-slate-900 rounded-xl overflow-hidden shadow-inner relative border border-slate-100">
 <video id="webcam-siswa" autoplay playsinline muted class="w-full h-full object-cover scale-x-[-1]"></video>
 <div id="status-kamera-error" class="hidden absolute inset-0 bg-slate-900 text-slate-200 text-[10px] font-bold p-2 flex flex-col items-center justify-center text-center gap-1">
-<span>⚠️</span> Aktifkan Kamera!
+<span class="text-lg">⚠️</span> Aktifkan Kamera!
 </div>
 </div>
 </div>
@@ -194,7 +194,6 @@ let indexSoalAktif = 0;
 let mapJawabanSiswa = {};
 let sisaWaktuDetik = 90 * 60;
 let intervalTimer = null;
-let intervalCekSesi = null; // Variable BARU penampung interval detektor akun ganda
 let mapelPilihanSiswa = "";
 let streamKamera = null;
 
@@ -261,6 +260,13 @@ return;
 btn.disabled = true;
 btn.innerText = "Memverifikasi...";
 
+// Inisialisasi Device Token unik untuk mencegah multi-device login
+let deviceToken = localStorage.getItem("asaj_device_token");
+if (!deviceToken) {
+deviceToken = "DEV-" + Math.random().toString(36).substr(2, 9).toUpperCase();
+localStorage.setItem("asaj_device_token", deviceToken);
+}
+
 fetch(API_URL, {
 method: "POST",
 headers: {
@@ -271,13 +277,21 @@ action: "prosesLoginSiswa",
 id_kelas: "KLS-04",
 mata_pelajaran: mapel,
 username: user,
-token: token
+token: token,
+device_token: deviceToken
 })
 })
 .then(res => res.json())
 .then(respon => {
 if (respon.status === "mapel_nonaktif") {
 alert(`Mohon maaf mata pelajaran ${mapel} belum di mulai.`);
+btn.disabled = false;
+btn.innerText = "Masuk Ruang Ujian";
+return;
+}
+
+if (respon.status === "perangkat_lain_aktif") {
+alert("Akun Anda sedang digunakan di perangkat lain! Silakan hubungi pengawas ruangan untuk mereset sesi.");
 btn.disabled = false;
 btn.innerText = "Masuk Ruang Ujian";
 return;
@@ -293,11 +307,6 @@ return;
 if (respon.status === "success") {
 const dataSiswaTerverifikasi = respon.data_siswa;
 mapelPilihanSiswa = mapel.toString().toUpperCase().trim();
-
-// BARU: Ambil dan amankan token sesi unik dari Apps Script ke dalam Storage lokal browser
-if (respon.session_token) {
-localStorage.setItem("asaj_session_token", respon.session_token);
-}
 
 fetch(API_URL, {
 method: "POST",
@@ -340,55 +349,19 @@ btn.innerText = "Masuk Ruang Ujian";
 });
 }
 
-function scarcityLockHeartbeatChecker(idSiswa) {
-if (intervalCekSesi) clearInterval(intervalCekSesi);
-
-// Lakukan pemeriksaan berkala ke cloud database setiap 10 detik sekali
-intervalCekSesi = setInterval(() => {
-const clientToken = localStorage.getItem("asaj_session_token");
-if (!clientToken || !idSiswa) return;
-
-fetch(API_URL, {
-method: "POST",
-headers: { "Content-Type": "text/plain" },
-body: JSON.stringify({
-action: "periksaSesiSiswa",
-id_siswa: idSiswa,
-session_token: clientToken
-})
-})
-.then(res => res.json())
-.then(statusSesi => {
-if (statusSesi && statusSesi.valid === false) {
-clearInterval(intervalCekSesi);
-if (intervalTimer) clearInterval(intervalTimer);
-matikanKameraSiswa();
-localStorage.clear();
-alert("PENTING: " + (statusSesi.message || "Akun Anda terdeteksi telah login di perangkat/tab lain!"));
-window.location.reload();
-}
-})
-.catch(err => console.log("Koneksi verifikasi berkala terputus sebentar:", err));
-}, 10000);
-}
-
 function bukaHalamanUjian(siswa) {
 document.getElementById("login-section").classList.add("hidden");
 document.getElementById("exam-section").classList.remove("hidden");
 document.getElementById("exam-section").classList.add("flex");
 
-const targetIdSiswa = siswa.id_siswa || siswa.ID_SISWA || "-";
 document.getElementById("display-nama").innerText = siswa.nama_lengkap || siswa.NAMA_LENGKAP || "Siswa";
-document.getElementById("display-idsiswa").innerText = targetIdSiswa;
+document.getElementById("display-idsiswa").innerText = siswa.id_siswa || siswa.ID_SISWA || "-";
 document.getElementById("display-idkelas").innerText = "KLS-04";
 document.getElementById("display-status").innerText = "AKTIF";
 
 aktifkanKameraSiswa();
 jalankanTimerUjian();
 muatMasterSoal();
-
-// BARU: Nyalakan fungsi pengunci integrasi ganda sesaat setelah masuk ruang ujian
-scarcityLockHeartbeatChecker(targetIdSiswa);
 }
 
 function jalankanTimerUjian() {
@@ -396,7 +369,6 @@ if(intervalTimer) clearInterval(intervalTimer);
 intervalTimer = setInterval(() => {
 if (sisaWaktuDetik <= 0) {
 clearInterval(intervalTimer);
-if (intervalCekSesi) clearInterval(intervalCekSesi);
 alert("Waktu habis! Jawaban Anda otomatis tersimpan.");
 kirimKeSpreadsheetOtomatis("SELESAI");
 return;
@@ -622,7 +594,6 @@ return totalSkorSiswa;
 
 function prosesSelesaiUjian() {
 if (confirm("Apakah Ananda yakin ingin mengakhiri sesi ujian?")) {
-if (intervalCekSesi) clearInterval(intervalCekSesi);
 clearInterval(intervalTimer);
 matikanKameraSiswa();
 
@@ -645,10 +616,37 @@ document.getElementById("success-modal").classList.remove("hidden");
 }
 
 function logoutSiswa() {
-if (intervalCekSesi) clearInterval(intervalCekSesi);
 localStorage.clear();
 window.location.reload();
 }
+
+// Background Validasi: Memeriksa integritas Single Device Login setiap 15 detik sekali
+setInterval(() => {
+const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
+const deviceToken = localStorage.getItem("asaj_device_token");
+if (sesi && deviceToken) {
+const dataSiswa = JSON.parse(sesi);
+fetch(API_URL, {
+method: "POST",
+headers: { "Content-Type": "text/plain" },
+body: JSON.stringify({
+action: "cekValidasiPerangkat",
+id_siswa: dataSiswa.id_siswa || dataSiswa.ID_SISWA,
+device_token: deviceToken
+})
+})
+.then(res => res.json())
+.then(respon => {
+if (respon.status === "diblokir") {
+clearInterval(intervalTimer);
+matikanKameraSiswa();
+alert("Sesi Anda berakhir! Akun Anda baru saja login di perangkat lain.");
+logoutSiswa();
+}
+})
+.catch(err => console.error("Gagal melakukan pengecekan perangkat:", err));
+}
+}, 15000);
 </script>
 </body>
 </html>
