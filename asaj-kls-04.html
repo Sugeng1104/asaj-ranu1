@@ -1,96 +1,156 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ujian ASAJ Kelas 4 - SDN Ranuklindungan I</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .emas-menyala {
-            color: #fbbf24;
-            text-shadow: 0 0 12px rgba(251,191,36,.9), 0 0 25px rgba(251,191,36,.6);
-            font-weight: 800;
-        }
-        .animate-fade-in { animation: fadeIn .4s ease-out; }
-        @keyframes fadeIn {
-            from { opacity:0; transform: translateY(10px); }
-            to { opacity:1; transform: translateY(0); }
-        }
-        #container-video-pengawas video {
-            aspect-ratio:1/1;
-            object-fit:cover;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ujian MATEMATIKA Kelas 4 - SDN Ranuklindungan I</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+body { font-family: 'Inter', sans-serif; }
+.animate-fade-in { animation: fadeIn .4s ease-out; }
+@keyframes fadeIn {
+  from { opacity:0; transform:translateY(10px);}
+  to { opacity:1; transform:translateY(0);}
+}
+</style>
 </head>
 
-<body class="bg-[#f8fafc] min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen flex flex-col">
 
 <!-- ================= LOGIN ================= -->
-<div id="login-section" class="flex-grow flex items-center justify-center p-6">
-    <div class="bg-white rounded-[30px] shadow-xl shadow-slate-200/60 p-10 w-full max-w-md border border-slate-100 text-center">
-        <h1 class="text-2xl font-bold text-slate-800 mb-2">Login Peserta</h1>
-        <p class="text-sm text-slate-400 mb-8 font-medium tracking-wide uppercase">ASAJ Kelas 4</p>
+<div id="login-section" class="flex-grow flex items-center justify-center">
+  <div class="bg-white p-10 rounded-3xl shadow-lg w-full max-w-md text-center">
+    <h1 class="text-2xl font-extrabold mb-2">Login Ujian</h1>
+    <p class="text-sm text-slate-400 mb-6">MATEMATIKA Kelas 4</p>
 
-        <form onsubmit="prosesLoginSiswa(event)" class="space-y-5 text-left">
-            <div>
-                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
-                    Nama Siswa
-                </label>
-                <input type="text" id="username" required autocomplete="off"
-                    class="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl font-semibold
-                    focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                    placeholder="Tulis nama lengkap siswa">
-            </div>
+    <form onsubmit="prosesLoginSiswa(event)" class="space-y-4 text-left">
+      <div>
+        <label class="block text-xs font-bold text-slate-400 uppercase mb-2">
+          Nama Lengkap
+        </label>
+        <input id="username" required autocomplete="off"
+          class="w-full px-5 py-3 bg-slate-50 border rounded-xl font-semibold"
+          placeholder="Ketik nama lengkap">
+      </div>
 
-            <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg shadow-blue-200 transition-all active:scale-[0.98] mt-4">
-                Masuk Ruang Ujian Matematika
-            </button>
-        </form>
-    </div>
+      <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl">
+        Masuk Ruang Ujian
+      </button>
+    </form>
+  </div>
 </div>
 
-<!-- ================= UJIAN (ASLI, TIDAK DIUBAH) ================= -->
+<!-- ================= UJIAN ================= -->
 <div id="exam-section" class="hidden flex-col flex-grow animate-fade-in">
-    <!-- SELURUH ISI UJIAN ANDA TETAP 100% -->
+<header class="bg-white p-4 border-b flex justify-between items-center">
+  <div>
+    <h2 id="display-nama" class="font-bold text-lg">Siswa</h2>
+    <p class="text-sm text-slate-400">MATEMATIKA Kelas 4</p>
+  </div>
+  <div class="text-center">
+    <p class="text-xs font-bold text-slate-400">SISA WAKTU</p>
+    <p id="exam-timer" class="font-black text-lg text-amber-600">90:00</p>
+  </div>
+</header>
+
+<main class="flex-grow p-6 max-w-4xl mx-auto">
+  <div id="loading-soal" class="text-slate-400 font-medium text-center">
+    Memuat soal MATEMATIKA...
+  </div>
+
+  <div id="box-soal-inti" class="hidden space-y-6">
+    <div class="flex justify-between text-sm font-bold text-slate-500">
+      <span>Soal <span id="current-number-label">1</span></span>
+      <span>MATEMATIKA</span>
+    </div>
+
+    <p id="teks-pertanyaan" class="font-bold text-lg"></p>
+
+    <div id="wrapper-opsi-pg" class="space-y-3">
+      <button onclick="pilihJawaban('A')" id="A" class="opsi">A</button>
+      <button onclick="pilihJawaban('B')" id="B" class="opsi">B</button>
+      <button onclick="pilihJawaban('C')" id="C" class="opsi">C</button>
+      <button onclick="pilihJawaban('D')" id="D" class="opsi">D</button>
+    </div>
+
+    <div class="flex justify-between mt-6">
+      <button onclick="prev()" class="btn">Kembali</button>
+      <button onclick="next()" class="btn bg-blue-600 text-white">Lanjut</button>
+    </div>
+  </div>
+</main>
 </div>
 
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxZO_VfKAa8VC8SpAr-jIhYa82wpeHqTH6iYVJV6uclV1YpYRL7QeqboB6v2Z6Apd1i-A/exec';
-const GITHUB_USERNAME = 'sugeng1104';
-const GITHUB_REPO = 'asaj-ranu1';
+/* ================= KONFIG ================= */
+const API_URL="https://script.google.com/macros/s/AKfycbxZO_VfKAa8VC8SpAr-jIhYa82wpeHqTH6iYVJV6uclV1YpYRL7QeqboB6v2Z6Apd1i-A/exec";
+const MAPEL="MATEMATIKA";
 
-let dataSoalUjian = [];
-let indexSoalAktif = 0;
-let mapJawabanSiswa = {};
-let sisaWaktuDetik = 90 * 60;
-let intervalTimer = null;
-let mapelPilihanSiswa = "MATEMATIKA";
-let streamKamera = null;
+/* ================= STATE ================= */
+let soal=[], idx=0, jawab={}, waktu=90*60, timer=null;
 
-document.addEventListener("DOMContentLoaded", function() {
-    const sesi = localStorage.getItem("sesi_siswa_asaj_kls4");
-    if (sesi) {
-        bukaHalamanUjian(JSON.parse(sesi));
-    }
-});
+/* ================= LOGIN ================= */
+function prosesLoginSiswa(e){
+ e.preventDefault();
+ const nama=username.value.trim();
+ const siswa={ nama_lengkap:nama, id_siswa:"MTK-"+Date.now() };
 
-function prosesLoginSiswa(event) {
-    event.preventDefault();
-    const nama = document.getElementById("username").value.trim();
-    if (!nama) return alert("Nama wajib diisi");
+ localStorage.setItem("siswa",JSON.stringify(siswa));
+ document.getElementById("display-nama").innerText=nama;
 
-    const dataSiswa = {
-        nama_lengkap: nama.toUpperCase(),
-        id_siswa: "SIS-" + Date.now()
-    };
+ document.getElementById("login-section").classList.add("hidden");
+ document.getElementById("exam-section").classList.remove("hidden");
 
-    localStorage.setItem("sesi_siswa_asaj_kls4", JSON.stringify(dataSiswa));
-    localStorage.setItem("asaj_mapel_kls4", mapelPilihanSiswa);
+ mulaiTimer();
+ ambilSoal();
+}
 
-    bukaHalamanUjian(dataSiswa);
+/* ================= SOAL ================= */
+function ambilSoal(){
+ fetch(API_URL,{
+  method:"POST",
+  headers:{ "Content-Type":"text/plain" },
+  body:JSON.stringify({
+    action:"ambilBankSoal",
+    id_kelas:"KLS-04",
+    mata_pelajaran:MAPEL
+  })
+ })
+ .then(r=>r.json())
+ .then(r=>{
+   soal=r.data;
+   loading-soal.classList.add("hidden");
+   box-soal-inti.classList.remove("hidden");
+   tampil();
+ });
+}
+
+function tampil(){
+ const s=soal[idx];
+ current-number-label.innerText=idx+1;
+ teks-pertanyaan.innerText=s.PERTANYAAN;
+ ["A","B","C","D"].forEach(o=>{
+   document.getElementById(o).innerText=o+". "+s["PILIHAN_"+o];
+ });
+}
+
+/* ================= JAWAB ================= */
+function pilihJawaban(o){ jawab[idx]=o; }
+function prev(){ if(idx>0){idx--; tampil();}}
+function next(){ if(idx<soal.length-1){idx++; tampil();}}
+
+/* ================= TIMER ================= */
+function mulaiTimer(){
+ timer=setInterval(()=>{
+  waktu--;
+  const m=String(Math.floor(waktu/60)).padStart(2,"0");
+  const d=String(waktu%60).padStart(2,"0");
+  exam-timer.innerText=`${m}:${d}`;
+  if(waktu<=0) clearInterval(timer);
+ },1000);
 }
 </script>
 
